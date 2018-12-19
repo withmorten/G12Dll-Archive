@@ -259,6 +259,8 @@ float delayTimeSector2 = 200.0f;
 float delayTimeSector3 = 6000.0f;
 float delayTimeSector4 = 10000.0f;
 
+zCSoundSystem *SoundSystem;
+
 myThunder oCBarrier_myThunderTemp[NEW_NUM_MAX_THUNDERS], hBarrier_myThunderTemp[NEW_NUM_MAX_THUNDERS];
 int oCBarrier_numMyThundersTemp, hBarrier_numMyThundersTemp;
 
@@ -266,7 +268,6 @@ int
 hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 {
 	zCRnd_D3D *Renderer = *(zCRnd_D3D **)0x00982F08; // zrenderer
-	zCSndSys_MSS *SoundSystem = *(zCSndSys_MSS **)0x0099B03C; // zsound
 	zCCamera *Camera = *(zCCamera **)0x008D7F94; // zCCamera::activeCam
 	zCMaterial *FrontierMat = this->skySphereMesh->polyList[0]->Material;
 
@@ -615,6 +616,18 @@ hSkyControler_Barrier::RenderSkyPre(void)
 	if (!*(int *)0x00AB040C) // barrierInited
 	{
 		*(int *)0x00AB040C = 1; // barrierInited
+
+		zCOption *Options = *(zCOption **)0x008CD988; // zoptions
+
+		if (Options->ReadBool((zSTRING *)0x008CD380, "soundEnabled", 1)) // zOPT_SEC_SOUND
+		{
+			SoundSystem = *(zCSndSys_MSS **)0x0099B03C; // zsound
+		}
+		else
+		{
+			SoundSystem = *(zCSoundSystemDummy **)0x0099B03C; // zsound
+		}
+
 
 		SkyControler_Barrier = this;
 

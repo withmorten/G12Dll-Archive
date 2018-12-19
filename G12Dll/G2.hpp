@@ -1,3 +1,5 @@
+#undef PlaySound
+
 #define zRND_ALPHA_FUNC_ADD 3
 
 typedef unsigned int zCOLOR;
@@ -41,6 +43,7 @@ class zCCSPlayer;
 class zTNode;
 class zCBBox3DSorterBase;
 class zCPolyStrip;
+class zCParser;
 
 template<class T> class zCArray
 {
@@ -1224,12 +1227,148 @@ class zCSoundFX : public zCObject
 {
 };
 
-class zCSndSys_MSS
+class zCSoundSystem
 {
 public:
+	virtual ~zCSoundSystem()
+	{
+		XCALL(0x004EB4D0);
+	}
+
+	virtual zCSoundFX *LoadSoundFX(zSTRING *)
+	{
+		XCALL(0x004EB360);
+	}
+
+	virtual zCSoundFX *LoadSoundFXScript(zSTRING *)
+	{
+		XCALL(0x004EB370);
+	}
+
+	virtual zCParser *GetSFXParser(void)
+	{
+		XCALL(0x004EB380);
+	}
+
+	virtual float GetPlayingTimeMSEC(zSTRING *)
+	{
+		XCALL(0x004EB390);
+	}
+
+	virtual void SetSound3DDefaultRadius(float)
+	{
+		XCALL(0x004EB3A0);
+	}
+
+	virtual float GetSound3DDefaultRadius(void)
+	{
+		XCALL(0x004EB3B0);
+	}
+
+	virtual void SetMasterVolume(float)
+	{
+		XCALL(0x004EB3C0);
+	}
+
+	virtual float GetMasterVolume(void)
+	{
+		XCALL(0x004EB3D0);
+	}
+
+	virtual zTSoundHandle PlaySound(zCSoundFX *, int) = 0;
+
+	virtual zTSoundHandle PlaySound(zCSoundFX *, int, int, float, float) = 0;
+
+	virtual zTSoundHandle PlaySound3D(zCSoundFX *, zCVob *, int, zTSound3DParams *) = 0;
+
+	virtual zTSoundHandle PlaySound3D(zSTRING *, zCVob *, int, zTSound3DParams *) = 0;
+
+	virtual void StopSound(zTSoundHandle *)
+	{
+		XCALL(0x004EB3E0);
+	}
+
+	virtual void StopAllSounds(void)
+	{
+		XCALL(0x004EB3F0);
+	}
+
+	virtual int GetSound3DProps(zTSoundHandle *, zTSound3DParams *) = 0;
+
+	virtual int UpdateSound3D(zTSoundHandle *, zTSound3DParams *) = 0;
+
+	virtual void GetSoundProps(zTSoundHandle *, int *, float *, float *)
+	{
+		XCALL(0x004EB400);
+	}
+
+	virtual void UpdateSoundProps(zTSoundHandle *, int, float, float)
+	{
+		XCALL(0x004EB410);
+	}
+
+	virtual int IsSoundActive(zTSoundHandle *)
+	{
+		XCALL(0x004EB420);
+	}
+};
+
+class zCSndSys_MSS : public zCSoundSystem
+{
+public:
+	~zCSndSys_MSS()
+	{
+		XCALL(0x004EB550);
+	}
+
+	zCSoundFX *LoadSoundFX(zSTRING *)
+	{
+		XCALL(0x004ED960);
+	}
+
 	zCSoundFX *LoadSoundFXScript(zSTRING *)
 	{
 		XCALL(0x004EE120);
+	}
+
+	zCParser *GetSFXParser(void)
+	{
+		XCALL(0x004F4270);
+	}
+
+	float GetPlayingTimeMSEC(zSTRING *)
+	{
+		XCALL(0x004F40E0);
+	}
+
+	void SetSound3DDefaultRadius(float)
+	{
+		XCALL(0x004EB3A0);
+	}
+
+	float GetSound3DDefaultRadius(void)
+	{
+		XCALL(0x004EB3B0);
+	}
+
+	void SetMasterVolume(float)
+	{
+		XCALL(0x004ED8E0);
+	}
+
+	float GetMasterVolume(void)
+	{
+		XCALL(0x004ED730);
+	}
+
+	zTSoundHandle PlaySound(zCSoundFX *, int)
+	{
+		XCALL(0x004EF7B0);
+	}
+
+	zTSoundHandle PlaySound(zCSoundFX *, int, int, float, float)
+	{
+		XCALL(0x004F0B70);
 	}
 
 	zTSoundHandle PlaySound3D(zCSoundFX *, zCVob *, int, zTSound3DParams *)
@@ -1237,9 +1376,24 @@ public:
 		XCALL(0x004F10F0);
 	}
 
+	zTSoundHandle PlaySound3D(zSTRING *, zCVob *, int, zTSound3DParams *)
+	{
+		XCALL(0x004F1060);
+	}
+
 	void StopSound(zTSoundHandle *)
 	{
 		XCALL(0x004F2300);
+	}
+
+	void StopAllSounds(void)
+	{
+		XCALL(0x004F23C0);
+	}
+
+	int GetSound3DProps(zTSoundHandle *, zTSound3DParams *)
+	{
+		XCALL(0x004F3780);
 	}
 
 	int UpdateSound3D(zTSoundHandle *, zTSound3DParams *)
@@ -1247,8 +1401,131 @@ public:
 		XCALL(0x004F2410);
 	}
 
+	void GetSoundProps(zTSoundHandle *, int *, float *, float *)
+	{
+		XCALL(0x004F3580);
+	}
+
+	void UpdateSoundProps(zTSoundHandle *, int, float, float)
+	{
+		XCALL(0x004F3970);
+	}
+
 	int IsSoundActive(zTSoundHandle *)
 	{
 		XCALL(0x004F3FD0);
+	}
+};
+
+class zCSoundSystemDummy : public zCSoundSystem
+{
+public:
+	~zCSoundSystemDummy()
+	{
+		XCALL(0x00639000);
+	}
+
+	zCSoundFX *LoadSoundFX(zSTRING *)
+	{
+		XCALL(0x00632AC0);
+	}
+
+	zCSoundFX *LoadSoundFXScript(zSTRING *)
+	{
+		XCALL(0x004EB370);
+	}
+
+	zCParser *GetSFXParser(void)
+	{
+		XCALL(0x004EB380);
+	}
+
+	float GetPlayingTimeMSEC(zSTRING *)
+	{
+		XCALL(0x004EB390);
+	}
+
+	void SetSound3DDefaultRadius(float)
+	{
+		XCALL(0x004EB3A0);
+	}
+
+	float GetSound3DDefaultRadius(void)
+	{
+		XCALL(0x004EB3B0);
+	}
+
+	void SetMasterVolume(float)
+	{
+		XCALL(0x004EB3C0);
+	}
+
+	float GetMasterVolume(void)
+	{
+		XCALL(0x004EB3D0);
+	}
+
+	zTSoundHandle PlaySound(zCSoundFX *, int)
+	{
+		XCALL(0x00632B80);
+	}
+
+	zTSoundHandle PlaySound(zCSoundFX *, int, int, float, float)
+	{
+		XCALL(0x00632B70);
+	}
+
+	zTSoundHandle PlaySound3D(zCSoundFX *, zCVob *, int, zTSound3DParams *)
+	{
+		XCALL(0x00632BA0);
+	}
+
+	zTSoundHandle PlaySound3D(zSTRING *, zCVob *, int, zTSound3DParams *)
+	{
+		XCALL(0x00632B90);
+	}
+
+	void StopSound(zTSoundHandle *)
+	{
+		XCALL(0x004EB3E0);
+	}
+
+	void StopAllSounds(void)
+	{
+		XCALL(0x004EB3F0);
+	}
+
+	int GetSound3DProps(zTSoundHandle *, zTSound3DParams *)
+	{
+		XCALL(0x00632BB0);
+	}
+
+	int UpdateSound3D(zTSoundHandle *, zTSound3DParams *)
+	{
+		XCALL(0x00632BC0);
+	}
+
+	void GetSoundProps(zTSoundHandle *, int *, float *, float *)
+	{
+		XCALL(0x004EB400);
+	}
+
+	void UpdateSoundProps(zTSoundHandle *, int, float, float)
+	{
+		XCALL(0x004EB410);
+	}
+
+	int IsSoundActive(zTSoundHandle *)
+	{
+		XCALL(0x004EB420);
+	}
+};
+
+class zCOption
+{
+public:
+	int ReadBool(zSTRING *, char *, int)
+	{
+		XCALL(0x00462160);
 	}
 };
