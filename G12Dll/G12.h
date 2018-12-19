@@ -4,29 +4,29 @@
 UINT
 G12GetPrivateProfileInt(LPCTSTR lpKeyName, INT nDefault)
 {
-	INT nReturn;
+	FILE *f = fopen(G12INI_PATH1, "r");
 
-	nReturn = GetPrivateProfileInt(G12INI_SECTION, lpKeyName, nDefault, G12INI_PATH1);
-
-	if (GetLastError() == ERROR_PATH_NOT_FOUND)
+	if (f)
 	{
-		nReturn = GetPrivateProfileInt(G12INI_SECTION, lpKeyName, nDefault, G12INI_PATH2);
+		fclose(f);
+
+		return GetPrivateProfileInt(G12INI_SECTION, lpKeyName, nDefault, G12INI_PATH1);
 	}
 
-	return nReturn;
+	return GetPrivateProfileInt(G12INI_SECTION, lpKeyName, nDefault, G12INI_PATH2);
 }
 
 DWORD
 G12GetPrivateProfileString(LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lpReturnedString, DWORD nSize)
 {
-	DWORD dwReturn;
+	FILE *f = fopen(G12INI_PATH1, "r");
 
-	dwReturn = GetPrivateProfileString(G12INI_SECTION, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH1);
-
-	if (GetLastError() == ERROR_PATH_NOT_FOUND)
+	if (f)
 	{
-		dwReturn = GetPrivateProfileString(G12INI_SECTION, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH2);
+		fclose(f);
+
+		return GetPrivateProfileString(G12INI_SECTION, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH1);
 	}
 
-	return dwReturn;
+	return GetPrivateProfileString(G12INI_SECTION, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH2);
 }
