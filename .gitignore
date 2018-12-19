@@ -1,0 +1,10 @@
+*.VC.db
+*.VC.opendb
+*.lib
+*.exp
+*.obj
+*.dll
+*.pdb
+*/Release
+*/Debug
+.vs/*
