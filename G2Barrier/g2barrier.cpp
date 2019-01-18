@@ -5,14 +5,13 @@
 #include <math.h>
 #include "..\G12Dll\MemoryMgr.h"
 
-#define G12INI_SECTION "G12Barrier"
+#define G12INI_SECTION "G2Barrier"
 
 #include "..\G12Dll\G12.h"
 
 #include "..\G12Dll\G2.hpp"
 #include "..\G12Dll\G2.h"
-#include "barrier.hpp"
-#include "barrier.h"
+#include "g2barrier.hpp"
 
 FILE *conin, *conout;
 
@@ -23,40 +22,43 @@ char worldName[MAX_PATH];
 zVEC2 newPointList[38];
 
 float
-hMagFrontier::GetDistance(zVEC3 *pos, float *dist, zVEC3 *nearestPoint)
+hMagFrontier::GetDistance(zVEC3 &pos, float &dist, zVEC3 &nearestPoint)
 {
-	*dist = 10000000.0;
+	float real_dist;
+	zVEC2 playerPos, point2, point1, distToPoints;
 
-	if (pos->x == 0.0f && pos->z == 0.0f)
+	int x;
+
+	dist = 10000000.0;
+
+	playerPos.x = pos.x;
+	playerPos.y = pos.z;
+
+	if (playerPos.x == 0.0f && playerPos.y == 0.0f)
 	{
-		return *dist;
+		return dist;
 	}
 
-	float v11;
-	zVEC2 v12, v13, v14, v15;
-
-	v12.x = pos->x;
-	v12.y = pos->z;
-
-	for (int i = 1; i < 38; i++)
+	for (x = 1; x < 38; x++)
 	{
-		v13.x = newPointList[i].x;
-		v13.y = newPointList[i].y;
+		point1.x = newPointList[x - 1].x;
+		point1.y = newPointList[x - 1].y;
 
-		v14.x = newPointList[i - 1].x;
-		v14.y = newPointList[i - 1].y;
+		point2.x = newPointList[x].x;
+		point2.y = newPointList[x].y;
 
-		sub_474080(&v14, &v13, &v12, &v15);
+		GetDistanceToPoints(point1, point2, playerPos, distToPoints);
 
-		v11 = sqrtf((v15.y - v12.y) * (v15.y - v12.y) + (v15.x - v12.x) * (v15.x - v12.x));
+		real_dist = sqrtf((distToPoints.y - playerPos.y) * (distToPoints.y - playerPos.y) +
+							(distToPoints.x - playerPos.x) * (distToPoints.x - playerPos.x));
 
-		if (v11 < *dist)
+		if (real_dist < dist)
 		{
-			*dist = v11;
+			dist = real_dist;
 		}
 	}
 
-	return *dist;
+	return dist;
 }
 
 void
@@ -76,13 +78,13 @@ hMagFrontier::DoCheck(void)
 			{
 				if (this->npc)
 				{
-					zVEC3 playerProjPos;
+					zVEC3 playerProjPos, startPoint;
 					playerProjPos.x = this->npc->trafoObjToWorld.row[0].w;
 					playerProjPos.y = this->npc->trafoObjToWorld.row[1].w;
 					playerProjPos.z = this->npc->trafoObjToWorld.row[2].w;
 
 					float distToBarriere = 60000.0f;
-					this->GetDistance(&playerProjPos, &distToBarriere, NULL);
+					this->GetDistance(playerProjPos, distToBarriere, startPoint);
 
 					if (distToBarriere > 1200.0f || distToBarriere < 0.0f)
 					{
@@ -107,7 +109,7 @@ hMagFrontier::DoCheck(void)
 						}
 						else
 						{
-							this->DoShootFX(NULL);
+							this->DoShootFX(startPoint);
 						}
 					}
 				}
@@ -265,7 +267,7 @@ myThunder oCBarrier_myThunderTemp[NEW_NUM_MAX_THUNDERS], hBarrier_myThunderTemp[
 int oCBarrier_numMyThundersTemp, hBarrier_numMyThundersTemp;
 
 int
-hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
+hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
 {
 	zCRnd_D3D *Renderer = *(zCRnd_D3D **)0x00982F08; // zrenderer
 	zCCamera *Camera = *(zCCamera **)0x008D7F94; // zCCamera::activeCam
@@ -284,7 +286,7 @@ hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 			if (this->fadeState != BARRIER_ALPHA_MAX)
 			{
 				this->fadeState++;
-				SetAlpha(&FrontierMat->color, (BYTE)this->fadeState);
+				FrontierMat->color.SetAlphaByte((BYTE)this->fadeState);
 			}
 			else
 			{
@@ -298,7 +300,7 @@ hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 			if (this->fadeState)
 			{
 				this->fadeState--;
-				SetAlpha(&FrontierMat->color, (BYTE)this->fadeState);
+				FrontierMat->color.SetAlphaByte((BYTE)this->fadeState);
 			}
 			else
 			{
@@ -348,7 +350,7 @@ hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 		sound3DParams.isAmbient3D = 0;
 		sound3DParams.pitchOffset = -999999.0f;
 
-		if (!hBarrier_bThunder1 && !SoundSystem->IsSoundActive(&hBarrier_sfxHandle1) &&
+		if (!hBarrier_bThunder1 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle1) &&
 			*(float *)0x0099B3DC - delayTimeSector1 > 8000.f) // actualTime
 		{
 			this->AddThunder(this->startPointList1[(this->numStartPoints1 - 1) & _rand()], 11, 0, 1);
@@ -357,13 +359,13 @@ hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 
 			if (!hBarrier_sfx1)
 			{
-				hBarrier_sfx1 = SoundSystem->LoadSoundFXScript(&MfxBarriereAmbient);
+				hBarrier_sfx1 = SoundSystem->LoadSoundFXScript(MfxBarriereAmbient);
 			}
 
 			hBarrier_sfxHandle1 = SoundSystem->PlaySound3D(hBarrier_sfx1, Camera->connectedVob, 0, &sound3DParams);
 		}
 
-		if (!hBarrier_bThunder2 && !SoundSystem->IsSoundActive(&hBarrier_sfxHandle2) &&
+		if (!hBarrier_bThunder2 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle2) &&
 			*(float *)0x0099B3DC - delayTimeSector2 > 6000.f) // actualTime
 		{
 			this->AddThunder(this->startPointList2[(this->numStartPoints2 - 1) & _rand()], 11, 0, 2);
@@ -372,13 +374,13 @@ hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 
 			if (!hBarrier_sfx2)
 			{
-				hBarrier_sfx2 = SoundSystem->LoadSoundFXScript(&MfxBarriereAmbient);
+				hBarrier_sfx2 = SoundSystem->LoadSoundFXScript(MfxBarriereAmbient);
 			}
 
 			hBarrier_sfxHandle2 = SoundSystem->PlaySound3D(hBarrier_sfx2, Camera->connectedVob, 0, &sound3DParams);
 		}
 
-		if (!hBarrier_bThunder3 && !SoundSystem->IsSoundActive(&hBarrier_sfxHandle3) &&
+		if (!hBarrier_bThunder3 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle3) &&
 			*(float *)0x0099B3DC - delayTimeSector3 > 14000.f) // actualTime
 		{
 			this->AddThunder(this->startPointList3[(this->numStartPoints3 - 1) & _rand()], 11, 0, 3);
@@ -387,13 +389,13 @@ hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 
 			if (!hBarrier_sfx3)
 			{
-				hBarrier_sfx3 = SoundSystem->LoadSoundFXScript(&MfxBarriereAmbient);
+				hBarrier_sfx3 = SoundSystem->LoadSoundFXScript(MfxBarriereAmbient);
 			}
 
 			hBarrier_sfxHandle3 = SoundSystem->PlaySound3D(hBarrier_sfx3, Camera->connectedVob, 0, &sound3DParams);
 		}
 
-		if (!hBarrier_bThunder4 && !SoundSystem->IsSoundActive(&hBarrier_sfxHandle4) &&
+		if (!hBarrier_bThunder4 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle4) &&
 			*(float *)0x0099B3DC - delayTimeSector4 > 2000.f) // actualTime
 		{
 			this->AddThunder(this->startPointList4[(this->numStartPoints4 - 1) & _rand()], 11, 0, 4);
@@ -402,7 +404,7 @@ hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 
 			if (!hBarrier_sfx4)
 			{
-				hBarrier_sfx4 = SoundSystem->LoadSoundFXScript(&MfxBarriereAmbient);
+				hBarrier_sfx4 = SoundSystem->LoadSoundFXScript(MfxBarriereAmbient);
 			}
 
 			hBarrier_sfxHandle4 = SoundSystem->PlaySound3D(hBarrier_sfx4, Camera->connectedVob, 0, &sound3DParams);
@@ -417,22 +419,22 @@ hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 
 		if (hBarrier_sfx1)
 		{
-			SoundSystem->UpdateSound3D(&hBarrier_sfxHandle1, NULL);
+			SoundSystem->UpdateSound3D(hBarrier_sfxHandle1, NULL);
 		}
 
 		if (hBarrier_sfx2)
 		{
-			SoundSystem->UpdateSound3D(&hBarrier_sfxHandle2, NULL);
+			SoundSystem->UpdateSound3D(hBarrier_sfxHandle2, NULL);
 		}
 
 		if (hBarrier_sfx3)
 		{
-			SoundSystem->UpdateSound3D(&hBarrier_sfxHandle3, NULL);
+			SoundSystem->UpdateSound3D(hBarrier_sfxHandle3, NULL);
 		}
 
 		if (hBarrier_sfx4)
 		{
-			SoundSystem->UpdateSound3D(&hBarrier_sfxHandle4, NULL);
+			SoundSystem->UpdateSound3D(hBarrier_sfxHandle4, NULL);
 		}
 	}
 
@@ -443,7 +445,7 @@ hBarrier::Render(zTRenderContext *rndContext, int fadeInOut, int alwaysVisible)
 }
 
 int
-hBarrier::RenderThunder(myThunder *thunder, zTRenderContext *rndContext)
+hBarrier::RenderThunder(myThunder *thunder, zTRenderContext &rndContext)
 {
 	if (!thunder->m_bActive)
 	{
@@ -522,7 +524,7 @@ hBarrier::RenderThunder(myThunder *thunder, zTRenderContext *rndContext)
 
 		matTemp = *(zMAT4 *)0x008D45E8; // zMAT4::s_identity
 		mat = *(zMAT4 *)0x008D45E8; // zMAT4::s_identity
-		mat = rndContext->cam->GetTransform(1);
+		mat = rndContext.cam->GetTransform(1);
 
 		mat.row[0].z = mat.row[0].z * -1.0f;
 		mat.row[1].z = mat.row[1].z * -1.0f;
@@ -532,11 +534,11 @@ hBarrier::RenderThunder(myThunder *thunder, zTRenderContext *rndContext)
 		mat.row[1].w = thunder->m_vPosition.y;
 		mat.row[2].w = thunder->m_vPosition.z;
 
-		matTemp2 = rndContext->cam->GetTransform(0);
+		matTemp2 = rndContext.cam->GetTransform(0);
 
-		rndContext->cam->SetTransform(0, &mat);
+		rndContext.cam->SetTransform(0, mat);
 		this->thunderStartDecal->Render(rndContext);
-		rndContext->cam->SetTransform(0, &matTemp2);
+		rndContext.cam->SetTransform(0, matTemp2);
 	}
 
 	return 1;
@@ -552,9 +554,9 @@ Barrier_Init(void)
 	zCMaterial *FrontierMat = FrontierMesh->polyList[0]->Material;
 
 	zSTRING BarrierTexture("BARRIERE.TGA");
-	FrontierMat->SetTexture(&BarrierTexture);
+	FrontierMat->SetTexture(BarrierTexture);
 	FrontierMat->rndAlphaBlendFunc = zRND_ALPHA_FUNC_ADD;
-	SetAlpha(&FrontierMat->color, (BYTE)Barrier->fadeState);
+	FrontierMat->color.SetAlphaByte((BYTE)Barrier->fadeState);
 
 	int numPolys = FrontierMesh->numPoly;
 	float maxHeight = FrontierMesh->bbox3D.maxs.y;
@@ -584,11 +586,11 @@ Barrier_Init(void)
 			if (alpha > 255) alpha = 255;
 			if (alpha < 0) alpha = 0;
 
-			Feat->lightDyn = BARRIER_COLOR;
-			SetAlpha(&Feat->lightDyn, (BYTE)alpha);
+			Feat->lightDyn.color = BARRIER_COLOR;
+			Feat->lightDyn.SetAlphaByte((BYTE)alpha);
 
-			Feat->lightStat = BARRIER_COLOR;
-			SetAlpha(&Feat->lightStat, (BYTE)alpha);
+			Feat->lightStat.color = BARRIER_COLOR;
+			Feat->lightStat.SetAlphaByte((BYTE)alpha);
 		}
 	}
 }
@@ -619,7 +621,7 @@ hSkyControler_Barrier::RenderSkyPre(void)
 
 		zCOption *Options = *(zCOption **)0x008CD988; // zoptions
 
-		if (Options->ReadBool((zSTRING *)0x008CD380, "soundEnabled", 1)) // zOPT_SEC_SOUND
+		if (Options->ReadBool(*(zSTRING *)0x008CD380, "soundEnabled", 1)) // zOPT_SEC_SOUND
 		{
 			SoundSystem = *(zCSndSys_MSS **)0x0099B03C; // zsound
 		}
@@ -627,7 +629,6 @@ hSkyControler_Barrier::RenderSkyPre(void)
 		{
 			SoundSystem = *(zCSoundSystemDummy **)0x0099B03C; // zsound
 		}
-
 
 		SkyControler_Barrier = this;
 
@@ -684,7 +685,7 @@ hSkyControler_Barrier::RenderSkyPre(void)
 		_memcpy(this->barrier->myThunderList, &oCBarrier_myThunderTemp, sizeof(myThunder) * NEW_NUM_MAX_THUNDERS);
 		this->barrier->numMyThunders = oCBarrier_numMyThundersTemp;
 
-		Barrier->oCBarrier::Render(&rndContext, 0, 0);
+		Barrier->oCBarrier::Render(rndContext, 0, 0);
 
 		_memcpy(&oCBarrier_myThunderTemp, this->barrier->myThunderList, sizeof(myThunder) * NEW_NUM_MAX_THUNDERS);
 		oCBarrier_numMyThundersTemp = this->barrier->numMyThunders;
@@ -705,7 +706,7 @@ hSkyControler_Barrier::RenderSkyPre(void)
 		_memcpy(this->barrier->myThunderList, &hBarrier_myThunderTemp, sizeof(myThunder) * NEW_NUM_MAX_THUNDERS);
 		this->barrier->numMyThunders = hBarrier_numMyThundersTemp;
 
-		Barrier->Render(&rndContext, 0, 0);
+		Barrier->Render(rndContext, 0, 0);
 
 		_memcpy(&hBarrier_myThunderTemp, this->barrier->myThunderList, sizeof(myThunder) * NEW_NUM_MAX_THUNDERS);
 		hBarrier_numMyThundersTemp = this->barrier->numMyThunders;

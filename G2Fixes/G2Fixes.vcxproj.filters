@@ -15,20 +15,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dinput.cpp">
+    <ClCompile Include="g2fixes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="main.def">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\G12Dll\MemoryMgr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\G2Fixes\g2fixes.hpp">
+    <ClInclude Include="..\G12Dll\G12.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\G12Dll\G2.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\G12Dll\G2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="g2fixes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

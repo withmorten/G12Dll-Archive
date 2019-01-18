@@ -15,15 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="barrier.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\G12Dll\MemoryMgr.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="barrier.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\G12Dll\G12.h">
@@ -35,8 +27,13 @@
     <ClInclude Include="..\G12Dll\G2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="barrier.h">
+    <ClInclude Include="g2barrier.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="g2barrier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

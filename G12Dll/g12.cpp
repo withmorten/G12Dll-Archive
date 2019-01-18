@@ -43,27 +43,9 @@ PatchSpacer(void)
 	}
 }
 
-const char *Gothic1AppName = "Gothic - 2.6 (fix)";
-const char *Gothic1WorldZen = "WORLD.ZEN";
-const char *NoSound = "NOSOUND";
-
 void
 PatchGothic2(void)
 {
-	if (G12GetPrivateProfileInt("Gothic1Mode", 0))
-	{
-		// Fix App Title
-		Patch(0x0089D9AC, Gothic1AppName);
-
-		// New game starts WORLD.ZEN
-		Patch(0x00429A23 + 1, Gothic1WorldZen);
-		Patch(0x00429A52 + 1, Gothic1WorldZen);
-
-		// No GAMESTART menu music
-		Patch(0x004DB7EE + 1, NoSound);
-		Patch(0x004DB815 + 1, NoSound);
-	}
-
 	if (G12GetPrivateProfileInt("ShowTime", 0))
 	{
 		// Enable Show Time
@@ -74,10 +56,6 @@ PatchGothic2(void)
 	{
 		// oCNpc::godmode
 		Patch(0x00AB2660, 1);
-	}
-
-	if (G12GetPrivateProfileInt("G12Barrier", 0)) {
-		LoadLibrary("g12barrier.dll");
 	}
 }
 

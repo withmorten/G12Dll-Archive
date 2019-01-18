@@ -2,8 +2,20 @@
 
 #define zRND_ALPHA_FUNC_ADD 3
 
-typedef unsigned int zCOLOR;
 typedef int zTSoundHandle;
+typedef int zTVobCharClass;
+typedef int zTVobSleepingMode;
+typedef int zTSndManMedium;
+
+typedef int oTSndMaterial;
+
+struct oTDirectionInfo;
+struct oTVobList;
+struct oTVobListNpcs;
+struct oTVobListItems;
+
+struct zTNode;
+
 class zCLightMap;
 class zCMaterial;
 class zCTexture;
@@ -21,10 +33,7 @@ class zCCollisionObjectDef;
 class zCCollisionObject;
 class zCOutdoorRainFX;
 class zCCSManager;
-class oCNpc;
 class zCWaypoint;
-class oTDirectionInfo;
-class oCNpcTalent;
 class zCCSCutsceneContext;
 class zCSession;
 class zCWayNet;
@@ -35,15 +44,39 @@ class zCCBspTree;
 class zCBspNode;
 class zCBspBase;
 class zCVobLight;
-class oTVobList;
-class oTVobListNpcs;
-class oTVobListItems;
-class oCVisualFX;
 class zCCSPlayer;
-class zTNode;
 class zCBBox3DSorterBase;
 class zCPolyStrip;
 class zCParser;
+class zCClassDef;
+class zCArchiver;
+class zCVob;
+class zCCamera;
+class zCPolygon;
+class zCVertex;
+class zCEventMessage;
+class zCRoute;
+class zCView;
+class zCPlayerGroup;
+class zCObject;
+
+class oCNpc;
+class oCNpcTalent;
+class oCVisualFX;
+class oCAIVobMove;
+class oCRtnEntry;
+class oCItem;
+class oCMag_Book;
+class oCSpell;
+class oCAskBox;
+class oCInfo;
+class oCNews;
+class oCMission;
+class oCMobInter;
+class oCAIHuman;
+class oCAniCtrl_Human;
+class oCNpcMessage;
+class oCVob;
 
 template<class T> class zCArray
 {
@@ -51,12 +84,16 @@ public:
 	T *pArray;
 	int numAlloc;
 	int numInArray;
+
+public:
+	void DeleteList();
+	void Remove(zCVob *&);
 };
 
 template<class T> class zCArraySort : public zCArray<T>
 {
 public:
-	int(*Compare)(T *ele1, T *ele2);
+	int (*Compare) (T *ele1, T *ele2);
 };
 
 template<class T> class zCList
@@ -66,50 +103,35 @@ public:
 	zCList *next;
 };
 
+template<class T> class zCListSort
+{
+public:
+	int (*Compare) (T *ele1, T *ele2);
+	T *data;
+	zCListSort *next;
+};
+
 class zSTRING
 {
 public:
-	int _vftable;
+	void *_vftable;
 	int _allocator;
 	char *ptr;
 	int len;
 	int res;
 
 public:
-	zSTRING(const char *)
-	{
-		XCALL(0x004010C0);
-	}
+	zSTRING(char *) { XCALL(0x004010C0); }
 };
 
-class zCObject
+class zCOLOR
 {
 public:
-	int _vftable;
-	int _refCtr;
-	int _hashIndex;
-	int _hashNext;
-	zSTRING _objectName;
+	int color;
 
 public:
-	int Release(void)
-	{
-		XCALL(0x0040C310);
-	}
-
-	zSTRING *GetObjectName(void)
-	{
-		XCALL(0x005A9CD0);
-	}
-};
-
-class zCVisual : public zCObject
-{
-public:
-	zCVisual *nextLODVisual;
-	zCVisual *prevLODVisual;
-	float lodFarDistance;
-	float lodNearFadeOutDistance;
+	void SetAlphaByte(BYTE);
+	BYTE GetAlphaByte();
 };
 
 class zVEC2
@@ -142,17 +164,164 @@ public:
 	zVEC4 row[4];
 
 public:
-	zMAT4 *operator=(zMAT4 *)
-	{
-		XCALL(0x00514D80);
-	}
+	zMAT4 *operator=(zMAT4 &) { XCALL(0x00514D80); }
+	void GetTranslation(zVEC3 &) { XCALL(0x00487C70); }
 };
 
-class zTPlane
+struct zTPlane
 {
-public:
 	float m_fD;
 	zVEC3 m_vNormal;
+};
+
+struct zTBBox3D
+{
+	zVEC3 mins;
+	zVEC3 maxs;
+};
+
+struct zTBSphere3D
+{
+	zVEC3 center;
+	float radius;
+};
+
+struct zTViewPortData
+{
+	int xmin;
+	int ymin;
+	int xdim;
+	int ydim;
+	float xminFloat;
+	float yminFloat;
+	float xmaxFloat;
+	float ymaxFloat;
+	float xdimFloat;
+	float ydimFloat;
+	float xdimFloatMinus1;
+	float ydimFloatMinus1;
+	float xcenter;
+	float ycenter;
+};
+
+struct zTCamVertSimple
+{
+	float x;
+	float y;
+	float z;
+	zVEC2 texuv;
+	zCOLOR color;
+};
+
+struct zTRenderContext
+{
+	int clipFlags;
+	zCVob *vob;
+	zCWorld *world;
+	zCCamera *cam;
+	float distVobToCam;
+	int visualCamAlign;
+	int m_AniMode;
+	float m_aniModeStrength;
+	zCOLOR hintLightingHighlightColor;
+
+	struct
+	{
+		unsigned char hintLightingFullbright : 1;
+		unsigned char hintLightingSwell : 1;
+		unsigned char hintLightingHighlight : 1;
+	};
+};
+
+struct zTRainFX
+{
+	zCOutdoorRainFX *outdoorRainFX;
+	int camLocationHint;
+	float outdoorRainFXWeight;
+	float soundVolume;
+	float timerInsideSectorCantSeeOutside;
+	float timeStartRain;
+	float timeStopRain;
+	int renderLightning;
+	int m_bRaining;
+	int m_iRainCtr;
+};
+
+struct zTTraceRayReport
+{
+	int m_BIntersect;
+	zCVob *m_pVob;
+	zCPolygon *m_pPolygon;
+	zVEC3 m_vIntersect;
+	zVEC3 m_vNormal;
+	zCVertex *m_pVertex;
+};
+
+struct zTBoxSortHandle
+{
+	void *_vftable;
+	zCBBox3DSorterBase *mySorter;
+	zTBBox3D bbox3D;
+
+	int indexBegin[3];
+	int indexEnd[3];
+
+	zCArray<zCVob *> activeList;
+};
+
+struct zTSound3DParams
+{
+	float obstruction;
+	float volume;
+	float radius;
+	int loopType;
+	float coneAngleDeg;
+	float reverbLevel;
+	int isAmbient3D;
+	float pitchOffset;
+};
+
+class zCClassDef
+{
+public:
+	zSTRING className;
+	zSTRING baseClassName;
+	zSTRING scriptClassName;
+	zCClassDef *baseClassDef;
+	zCObject *createNewInstance;
+	zCObject *createNewInstanceBackup;
+	unsigned int classFlags;
+	unsigned int classSize;
+	int numLivingObjects;
+	int numCtorCalled;
+	zCObject **hashtable;
+	zCArray<zCObject *> objectList;
+	unsigned short archiveVersion;
+	unsigned short archiveVersionSum;
+};
+
+class zCObject
+{
+public:
+	int _refCtr;
+	int _hashIndex;
+	int _hashNext;
+	zSTRING _objectName;
+
+public:
+	virtual zCClassDef *_GetClassDef() { XCALL(0x00401EC0); }
+
+public:
+	int Release() { XCALL(0x0040C310); }
+};
+
+class zCVisual : public zCObject
+{
+public:
+	zCVisual *nextLODVisual;
+	zCVisual *prevLODVisual;
+	float lodFarDistance;
+	float lodNearFadeOutDistance;
 };
 
 class zCVertex
@@ -200,13 +369,6 @@ public:
 	unsigned char PolyNumVert;
 };
 
-class zTBBox3D
-{
-public:
-	zVEC3 mins;
-	zVEC3 maxs;
-};
-
 class zCOBBox3D
 {
 public:
@@ -216,13 +378,6 @@ public:
 	zVEC3 m_vAxisZ;
 	zVEC3 m_vExtent;
 	zCList<zCOBBox3D> m_lstHierarchy;
-};
-
-class zTBSphere3D
-{
-public:
-	zVEC3 center;
-	float radius;
 };
 
 class zCMesh : public zCVisual
@@ -315,44 +470,7 @@ public:
 	int texScale[2];
 
 public:
-	zSTRING *GetName(void)
-	{
-		XCALL(0x0055FF10);
-	}
-
-	void SetTexture(zSTRING *)
-	{
-		XCALL(0x005649E0);
-	}
-};
-
-class zTViewPortData
-{
-public:
-	int xmin;
-	int ymin;
-	int xdim;
-	int ydim;
-	float xminFloat;
-	float yminFloat;
-	float xmaxFloat;
-	float ymaxFloat;
-	float xdimFloat;
-	float ydimFloat;
-	float xdimFloatMinus1;
-	float ydimFloatMinus1;
-	float xcenter;
-	float ycenter;
-};
-
-class zTCamVertSimple
-{
-public:
-	float x;
-	float y;
-	float z;
-	zVEC2 texuv;
-	zCOLOR color;
+	void SetTexture(zSTRING &) { XCALL(0x005649E0); }
 };
 
 class zCVob : public zCObject
@@ -426,10 +544,9 @@ public:
 
 	zCCollisionObjectDef *m_poCollisionObjectClass;
 	zCCollisionObject *m_poCollisionObject;
-};
 
-class oCVob : public zCVob
-{
+public:
+	zCClassDef *_GetClassDef() { XCALL(0x0043CCB0); }
 };
 
 class zCCamera
@@ -497,55 +614,16 @@ public:
 	float leftRightCos;
 
 public:
-	void SetTransform(int, zMAT4 *)
-	{
-		XCALL(0x0054A540);
-	}
-
-	zMAT4 *GetTransform(int)
-	{
-		XCALL(0x0054A6A0);
-	}
-
-	void SetFarClipZ(float z)
-	{
-		XCALL(0x0054B200);
-	}
-};
-
-class zTRenderContext
-{
-public:
-	int clipFlags;
-	zCVob *vob;
-	zCWorld *world;
-	zCCamera *cam;
-	float distVobToCam;
-	int visualCamAlign;
-	int m_AniMode;
-	float m_aniModeStrength;
-	zCOLOR hintLightingHighlightColor;
-
-	struct
-	{
-		unsigned char hintLightingFullbright : 1;
-		unsigned char hintLightingSwell : 1;
-		unsigned char hintLightingHighlight : 1;
-	};
+	void SetTransform(int, zMAT4 &) { XCALL(0x0054A540); }
+	zMAT4 &GetTransform(int) { XCALL(0x0054A6A0); }
+	void SetFarClipZ(float) { XCALL(0x0054B200); }
 };
 
 class zCDecal : public zCVisual
 {
 public:
-	void SetDecalDim(float, float)
-	{
-		XCALL(0x00556970);
-	}
-
-	int Render(zTRenderContext *)
-	{
-		XCALL(0x00556990);
-	}
+	void SetDecalDim(float, float) { XCALL(0x00556970); }
+	int Render(zTRenderContext &) { XCALL(0x00556990); }
 };
 
 class zCPolyStrip : public zCVisual
@@ -588,15 +666,8 @@ public:
 	};
 
 public:
-	void SetVisibleSegments(float, float)
-	{
-		XCALL(0x005BDB90);
-	}
-
-	int Render(zTRenderContext *)
-	{
-		XCALL(0x005BDC70);
-	}
+	void SetVisibleSegments(float, float) { XCALL(0x005BDB90); }
+	int Render(zTRenderContext &) { XCALL(0x005BDC70); }
 };
 
 class myThunder
@@ -675,64 +746,19 @@ public:
 	zVEC2 *originalTexUVList;
 
 public:
-	void Init(void)
-	{
-		XCALL(0x006B9440);
-	}
-
-	int RenderLayer(zTRenderContext *, int, int *)
-	{
-		XCALL(0x006B9CF0);
-	}
-
-	int Render(zTRenderContext *, int, int)
-	{
-		XCALL(0x006B9F30);
-	}
-
-	void RemoveThunder(myThunder *)
-	{
-		XCALL(0x006BA9F0);
-	}
-
-	int AddThunder(int, int, float, int)
-	{
-		XCALL(0x006BADE0);
-	}
+	void Init() { XCALL(0x006B9440); }
+	int RenderLayer(zTRenderContext &, int, int *) { XCALL(0x006B9CF0); }
+	int Render(zTRenderContext &, int, int) { XCALL(0x006B9F30); }
+	void RemoveThunder(myThunder *) { XCALL(0x006BA9F0); }
+	int AddThunder(int, int, float, int) { XCALL(0x006BADE0); }
 };
 
 class zCRnd_D3D
 {
 public:
-	void FlushPolys(void)
-	{
-		XCALL(0x0064DD10);
-	}
-
-	void SetZBufferWriteEnabled(int zBufferWriteEnabled)
-	{
-		XCALL(0x006524E0);
-	}
-
-	int GetZBufferWriteEnabled(void)
-	{
-		XCALL(0x00652520);
-	}
-};
-
-class zTRainFX
-{
-public:
-	zCOutdoorRainFX *outdoorRainFX;
-	int camLocationHint;
-	float outdoorRainFXWeight;
-	float soundVolume;
-	float timerInsideSectorCantSeeOutside;
-	float timeStartRain;
-	float timeStopRain;
-	int renderLightning;
-	int m_bRaining;
-	int m_iRainCtr;
+	void FlushPolys() { XCALL(0x0064DD10); }
+	void SetZBufferWriteEnabled(int zBufferWriteEnabled) { XCALL(0x006524E0); }
+	int GetZBufferWriteEnabled() { XCALL(0x00652520); }
 };
 
 class zCSkyPlanet
@@ -796,12 +822,6 @@ public:
 	int relightCtr;
 	float lastRelightTime;
 	float m_fRelightTime;
-
-public:
-	int GetWeatherType(void)
-	{
-		XCALL(0x005DF510);
-	}
 };
 
 class zCSkyControler_Mid : public zCSkyControler
@@ -881,15 +901,7 @@ public:
 
 	zTRainFX rainFX;
 public:
-	int GetRenderLightning(void)
-	{
-		XCALL(0x005E6780);
-	}
-
-	void RenderSkyPre(void)
-	{
-		XCALL(0x005EA850);
-	}
+	void RenderSkyPre() { XCALL(0x005EA850); }
 };
 
 class oCSkyControler_Barrier : public zCSkyControler_Outdoor
@@ -897,22 +909,9 @@ class oCSkyControler_Barrier : public zCSkyControler_Outdoor
 public:
 	oCBarrier *barrier;
 	int bFadeInOut;
-public:
-	void RenderSkyPre(void)
-	{
-		XCALL(0x006BB8D0);
-	}
-};
 
-class zTTraceRayReport
-{
 public:
-	int m_BIntersect;
-	zCVob *m_pVob;
-	zCPolygon *m_pPolygon;
-	zVEC3 m_vIntersect;
-	zVEC3 m_vNormal;
-	zCVertex *m_pVertex;
+	void RenderSkyPre() { XCALL(0x006BB8D0); }
 };
 
 class zCBspTree
@@ -950,23 +949,10 @@ public:
 	int compiled;
 };
 
-class zTBoxSortHandle
-{
-public:
-	int _vftable;
-	zCBBox3DSorterBase *mySorter;
-	zTBBox3D bbox3D;
-
-	int indexBegin[3];
-	int indexEnd[3];
-
-	zCArray<zCVob *> activeList;
-};
-
 class zCVobBBox3DSorter
 {
 public:
-	int _vftable;
+	void *_vftable;
 	zCArray<zTBoxSortHandle *> handles;
 	zCArraySort<zTNode *> nodeList[3];
 	int sorted;
@@ -1034,73 +1020,93 @@ public:
 	zCArray<zCVob *> vobHashTable[2048];
 };
 
-class oCWorld : public zCWorld
-{
-public:
-	zSTRING worldFilename;
-	zSTRING worldName;
-
-	oTVobList *voblist;
-	oTVobListNpcs *voblist_npcs;
-	oTVobListItems *voblist_items;
-};
-
-class oCGame
-{
-public:
-	oCWorld *GetGameWorld(void)
-	{
-		XCALL(0x006C2C30);
-	}
-};
-
 class zCCSPlayer
 {
 public:
-	zCCSCutsceneContext *GetPlayingGlobalCutscene(void)
-	{
-		XCALL(0x00420770);
-	}
+	zCCSCutsceneContext *GetPlayingGlobalCutscene() { XCALL(0x00420770); }
 };
 
-class oCMagFrontier
+class zCSoundSystem
 {
 public:
-	oCVisualFX *warningFX;
-	oCVisualFX *shootFX;
-	oCNpc *npc;
-	unsigned char statusBit;
-
-public:
-	void DoCheck(void)
-	{
-		XCALL(0x00473740);
-	}
-
-	void DoWarningFX(int)
-	{
-		XCALL(0x00474CB0);
-	}
-
-	void DisposeWarningFX(void)
-	{
-		XCALL(0x00474E70);
-	}
-
-	void DoShootFX(zVEC3 *)
-	{
-		XCALL(0x00474EB0);
-	}
-
-	void DisposeShootFX(void)
-	{
-		XCALL(0x004751A0);
-	}
+	virtual void *scalar_deleting_destructor(unsigned int) { XCALL(0x004EB4D0); }
+	virtual zCSoundFX *LoadSoundFX(zSTRING &) { XCALL(0x004EB360); }
+	virtual zCSoundFX *LoadSoundFXScript(zSTRING &) { XCALL(0x004EB370); }
+	virtual zCParser *GetSFXParser() { XCALL(0x004EB380); }
+	virtual float GetPlayingTimeMSEC(zSTRING &) { XCALL(0x004EB390); }
+	virtual void SetSound3DDefaultRadius(float) { XCALL(0x004EB3A0); }
+	virtual float GetSound3DDefaultRadius() { XCALL(0x004EB3B0); }
+	virtual void SetMasterVolume(float) { XCALL(0x004EB3C0); }
+	virtual float GetMasterVolume() { XCALL(0x004EB3D0); }
+	virtual zTSoundHandle PlaySound(zCSoundFX *, int) = 0;
+	virtual zTSoundHandle PlaySound(zCSoundFX *, int, int, float, float) = 0;
+	virtual zTSoundHandle PlaySound3D(zCSoundFX *, zCVob *, int, zTSound3DParams *) = 0;
+	virtual zTSoundHandle PlaySound3D(zSTRING &, zCVob *, int, zTSound3DParams *) = 0;
+	virtual void StopSound(zTSoundHandle &) { XCALL(0x004EB3E0); }
+	virtual void StopAllSounds() { XCALL(0x004EB3F0); }
+	virtual int GetSound3DProps(zTSoundHandle &, zTSound3DParams &) = 0;
+	virtual int UpdateSound3D(zTSoundHandle &, zTSound3DParams *) = 0;
+	virtual void GetSoundProps(zTSoundHandle &, int &, float &, float &) { XCALL(0x004EB400); }
+	virtual void UpdateSoundProps(zTSoundHandle &, int, float, float) { XCALL(0x004EB410); }
+	virtual int IsSoundActive(zTSoundHandle &) { XCALL(0x004EB420); }
 };
 
-class oTRobustTrace
+class zCSndSys_MSS : public zCSoundSystem
 {
 public:
+	void *scalar_deleting_destructor(unsigned int) { XCALL(0x004EB550); }
+	zCSoundFX *LoadSoundFX(zSTRING &) { XCALL(0x004ED960); }
+	zCSoundFX *LoadSoundFXScript(zSTRING &) { XCALL(0x004EE120); }
+	zCParser *GetSFXParser() { XCALL(0x004F4270); }
+	float GetPlayingTimeMSEC(zSTRING &) { XCALL(0x004F40E0); }
+	void SetMasterVolume(float) { XCALL(0x004ED8E0); }
+	float GetMasterVolume() { XCALL(0x004ED730); }
+	zTSoundHandle PlaySound(zCSoundFX *, int) { XCALL(0x004EF7B0); }
+	zTSoundHandle PlaySound(zCSoundFX *, int, int, float, float) { XCALL(0x004F0B70); }
+	zTSoundHandle PlaySound3D(zCSoundFX *, zCVob *, int, zTSound3DParams *) { XCALL(0x004F10F0); }
+	zTSoundHandle PlaySound3D(zSTRING &, zCVob *, int, zTSound3DParams *) { XCALL(0x004F1060); }
+	void StopSound(zTSoundHandle &) { XCALL(0x004F2300); }
+	void StopAllSounds() { XCALL(0x004F23C0); }
+	int GetSound3DProps(zTSoundHandle &, zTSound3DParams &) { XCALL(0x004F3780); }
+	int UpdateSound3D(zTSoundHandle &, zTSound3DParams *) { XCALL(0x004F2410); }
+	void GetSoundProps(zTSoundHandle &, int &, float &, float &) { XCALL(0x004F3580); }
+	void UpdateSoundProps(zTSoundHandle &, int, float, float) { XCALL(0x004F3970); }
+	int IsSoundActive(zTSoundHandle &) { XCALL(0x004F3FD0); }
+};
+
+class zCSoundSystemDummy : public zCSoundSystem
+{
+public:
+	void *scalar_deleting_destructor(unsigned int) { XCALL(0x00639000); }
+	zCSoundFX *LoadSoundFX(zSTRING &) { XCALL(0x00632AC0); }
+	zTSoundHandle PlaySound(zCSoundFX *, int) { XCALL(0x00632B80); }
+	zTSoundHandle PlaySound(zCSoundFX *, int, int, float, float) { XCALL(0x00632B70); }
+	zTSoundHandle PlaySound3D(zCSoundFX *, zCVob *, int, zTSound3DParams *) { XCALL(0x00632BA0); }
+	zTSoundHandle PlaySound3D(zSTRING &, zCVob *, int, zTSound3DParams *) { XCALL(0x00632B90); }
+	int GetSound3DProps(zTSoundHandle &, zTSound3DParams &) { XCALL(0x00632BB0); }
+	int UpdateSound3D(zTSoundHandle &, zTSound3DParams *) { XCALL(0x00632BC0); }
+};
+
+class zCOption
+{
+public:
+	int ReadBool(zSTRING &, char *, int) { XCALL(0x00462160); }
+};
+
+class zCInputCallback
+{
+public:
+	void *_vftable;
+};
+
+class zCBspBase
+{
+public:
+	void __fastcall CollectVobsInBBox3D(zCArray<zCVob *> &, zTBBox3D &) { XCALL(0x00531110); }
+};
+
+struct oTRobustTrace
+{
 	struct
 	{
 		unsigned char stand : 1;
@@ -1137,11 +1143,184 @@ public:
 	float failurePossibility;
 };
 
+struct TNpcAIState
+{
+	int index;
+	int loop;
+	int end;
+	int timeBehaviour;
+	float restTime;
+	int phase;
+	int valid;
+	zSTRING name;
+	float stageTime;
+	int prgIndex;
+	int isRtnState;
+};
+
+struct TNpcPerc
+{
+	int percID;
+	int percFunc;
+};
+
+struct TNpcSlot
+{
+	zSTRING name;
+	int inInventory;
+	int tmpLevel;
+	zSTRING itemName;
+
+	oCVob *vob;
+
+	struct
+	{
+		int wasVobTreeWhenInserted : 1;
+	};
+};
+
+class oCVob : public zCVob
+{
+public:
+	zCClassDef *_GetClassDef() { XCALL(0x0077B6C0); }
+};
+
+class oCWorld : public zCWorld
+{
+public:
+	zSTRING worldFilename;
+	zSTRING worldName;
+
+	oTVobList *voblist;
+	oTVobListNpcs *voblist_npcs;
+	oTVobListItems *voblist_items;
+};
+
+class oCGame
+{
+public:
+	oCWorld *GetGameWorld() { XCALL(0x006C2C30); }
+};
+
+class oCMagFrontier
+{
+public:
+	oCVisualFX *warningFX;
+	oCVisualFX *shootFX;
+	oCNpc *npc;
+	unsigned char statusBit;
+
+public:
+	void DoCheck() { XCALL(0x00473740); }
+	void DoWarningFX(int) { XCALL(0x00474CB0); }
+	void DisposeWarningFX() { XCALL(0x00474E70); }
+	void DoShootFX(zVEC3 &) { XCALL(0x00474EB0); }
+	void DisposeShootFX() { XCALL(0x004751A0); }
+};
+
 class oCNpcTimedOverlay
 {
 public:
 	zSTRING mdsOverlayName;
 	float timer;
+};
+
+class oCNpc_States
+{
+public:
+	void *_vftable;
+
+	zSTRING name;
+
+	oCNpc *npc;
+	TNpcAIState curState;
+	TNpcAIState nextState;
+	int lastAIState;
+
+	int hasRoutine;
+	int rtnChanged;
+	oCRtnEntry *rtnBefore;
+	oCRtnEntry *rtnNow;
+	zCRoute *rtnRoute;
+	int rtnOverlay;
+	int rtnOverlayCount;
+	int walkmode_routine;
+	int weaponmode_routine;
+	int startNewRoutine;
+
+	int aiStateDriven;
+	zVEC3 aiStatePosition;
+
+	oCNpc *parOther;
+	oCNpc *parVictim;
+	oCItem *parItem;
+
+	int rtnChangeCount;
+};
+
+class oCItemContainer : public zCInputCallback
+{
+public:
+	zCListSort<oCItem> *contents;
+	oCNpc *npc;
+	zSTRING titleText;
+	int invMode;
+	int selectedItem;
+	int offset;
+	int maxSlotsCol;
+	int maxSlotsColScr;
+	int maxSlotsRow;
+	int maxSlotsRowScr;
+	int maxSlots;
+	int marginTop;
+	int marginLeft;
+	int frame;
+	int right;
+	int ownList;
+	int prepared;
+	int passive;
+	int TransferCount;
+
+	zCView *viewTitle;
+	zCView *viewBack;
+	zCView *viewItem;
+	zCView *viewItemActive;
+	zCView *viewItemHightlighted;
+	zCView *viewItemActiveHighlighted;
+	zCView *viewItemInfo;
+	zCView *viewItemInfoItem;
+	zCView *textView;
+	zCView *viewArrowAtTop;
+	zCView *viewArrowAtBottom;
+
+	zCWorld *rndWorld;
+	int posx;
+	int posy;
+	int m_bManipulateItemsDisabled;
+	int m_bCanTransferMoreThanOneItem;
+};
+
+class oCNpcInventory : public oCItemContainer
+{
+public:
+	oCNpc *owner;
+	int packAbility;
+
+	zCListSort<oCItem> inventory;
+
+	zSTRING packString;
+	int maxSlots;
+
+public:
+	int IsEmpty(int, int) { XCALL(0x0070D1A0); }
+};
+
+class oCNewsMemory
+{
+public:
+	void *_vftable;
+
+	zCList<oCNews> iknow;
 };
 
 class oCNpc : public oCVob
@@ -1208,324 +1387,156 @@ public:
 	zCArray<oCNpcTalent *> talents;
 	int spellMana;
 	oCMagFrontier magFrontier;
+	oCNpc_States state;
+	oCNpcInventory inventory2;
+	oCItemContainer *trader;
+	oCNpc *tradeNpc;
+
+	float rangeToPlayer;
+	zCArray<zTSoundHandle> listOfVoiceHandles;
+	int voiceIndex;
+	zCArray<oCVisualFX *> effectList;
+
+	struct
+	{
+		int showaidebug : 1;
+		int showNews : 1;
+		int csAllowedAsRole : 1;
+
+		int isSummoned : 1;
+		int respawnOn : 1;
+		int movlock : 1;
+		int drunk : 1;
+		int mad : 1;
+		int overlay_wounded : 1;
+		int inOnDamage : 1;
+		int autoremoveweapon : 1;
+		int openinventory : 1;
+		int askroutine : 1;
+		int spawnInRange : 1;
+
+		int body_TexVarNr : 16;
+		int body_TexColorNr : 16;
+		int head_TexVarNr : 16;
+		int teeth_TexVarNr : 16;
+		int guildTrue : 8;
+		int drunk_heal : 8;
+		int mad_heal : 8;
+		int spells : 8;
+		int bodyState : 19;
+		int m_bAniMessageRunning : 1;
+	};
+
+	int instance;
+
+	zSTRING mds_name;
+	zSTRING body_visualName;
+	zSTRING head_visualName;
+
+	zVEC3 model_scale;
+	float model_fatness;
+
+	int namenr;
+	float hpHeal;
+	float manaHeal;
+	float swimtime;
+	float divetime;
+	float divectr;
+	zCVob *fireVob;
+	int fireDamage;
+	float fireDamageTimer;
+
+	int attitude;
+	int tmp_attitude;
+	float attTimer;
+	int knowsPlayer;
+
+	TNpcPerc percList[33];
+	int percActive;
+	float percActiveTime;
+	float percActiveDelta;
+
+	int overrideFallDownHeight;
+	float fallDownHeight;
+	int fallDownDamage;
+
+	oCMag_Book *mag_book;
+	zCList<oCSpell> activeSpells;
+	int lastHitSpellID;
+	int lastHitSpellCat;
+
+	zCArray<zSTRING> activeOverlays;
+
+	oCAskBox *askbox;
+	int askYes;
+	int askNo;
+	float canTalk;
+	oCNpc *talkOther;
+
+	oCInfo *info;
+	oCNews *news;
+	oCMission *curMission;
+
+	oCNewsMemory knownNews;
+
+	zCVob *carry_vob;
+	oCMobInter *interactMob;
+	oCItem *interactItem;
+	int interactItemCurrentState;
+	int interactItemTargetState;
+
+	int script_aiprio;
+	int old_script_state;
+	oCAIHuman *human_ai;
+	oCAniCtrl_Human *anictrl;
+	zCRoute *route;
+	float damageMul;
+
+	oCNpcMessage *csg;
+	oCNpcMessage *lastLookMsg;
+	oCNpcMessage *lastPointMsg;
+
+	zCArray<zCVob *> vobList;
+	float vobcheck_time;
+	float pickvobdelay;
+	zCVob *focus_vob;
+
+	zCArray<TNpcSlot *> invSlot;
+	zCArray<TNpcSlot *> tmpSlotList;
+
+	float fadeAwayTime;
+	float respawnTime;
+
+	float selfDist;
+	int fightRangeBase;
+	int fightRangeFist;
+	int fightRangeG;
+
+	float fight_waitTime;
+	int fight_waitForAniEnd;
+	float fight_lastStrafeFrame;
+
+	int soundType;
+	zCVob *soundVob;
+	zVEC3 soundPosition;
+
+	zCPlayerGroup *playerGroup;
+
+public:
+	zCClassDef *_GetClassDef() { XCALL(0x0072E370); }
 };
 
-class zTSound3DParams
+class oCMOB : public oCVob
 {
 public:
-	float obstruction;
-	float volume;
-	float radius;
-	int loopType;
-	float coneAngleDeg;
-	float reverbLevel;
-	int isAmbient3D;
-	float pitchOffset;
+	zCClassDef *_GetClassDef() { XCALL(0x0071BA20); }
 };
 
-class zCSoundFX : public zCObject
-{
-};
-
-class zCSoundSystem
+class oCMobInter : public oCMOB
 {
 public:
-	virtual ~zCSoundSystem()
-	{
-		XCALL(0x004EB4D0);
-	}
+	zCClassDef *_GetClassDef() { XCALL(0x0071D190); }
 
-	virtual zCSoundFX *LoadSoundFX(zSTRING *)
-	{
-		XCALL(0x004EB360);
-	}
-
-	virtual zCSoundFX *LoadSoundFXScript(zSTRING *)
-	{
-		XCALL(0x004EB370);
-	}
-
-	virtual zCParser *GetSFXParser(void)
-	{
-		XCALL(0x004EB380);
-	}
-
-	virtual float GetPlayingTimeMSEC(zSTRING *)
-	{
-		XCALL(0x004EB390);
-	}
-
-	virtual void SetSound3DDefaultRadius(float)
-	{
-		XCALL(0x004EB3A0);
-	}
-
-	virtual float GetSound3DDefaultRadius(void)
-	{
-		XCALL(0x004EB3B0);
-	}
-
-	virtual void SetMasterVolume(float)
-	{
-		XCALL(0x004EB3C0);
-	}
-
-	virtual float GetMasterVolume(void)
-	{
-		XCALL(0x004EB3D0);
-	}
-
-	virtual zTSoundHandle PlaySound(zCSoundFX *, int) = 0;
-
-	virtual zTSoundHandle PlaySound(zCSoundFX *, int, int, float, float) = 0;
-
-	virtual zTSoundHandle PlaySound3D(zCSoundFX *, zCVob *, int, zTSound3DParams *) = 0;
-
-	virtual zTSoundHandle PlaySound3D(zSTRING *, zCVob *, int, zTSound3DParams *) = 0;
-
-	virtual void StopSound(zTSoundHandle *)
-	{
-		XCALL(0x004EB3E0);
-	}
-
-	virtual void StopAllSounds(void)
-	{
-		XCALL(0x004EB3F0);
-	}
-
-	virtual int GetSound3DProps(zTSoundHandle *, zTSound3DParams *) = 0;
-
-	virtual int UpdateSound3D(zTSoundHandle *, zTSound3DParams *) = 0;
-
-	virtual void GetSoundProps(zTSoundHandle *, int *, float *, float *)
-	{
-		XCALL(0x004EB400);
-	}
-
-	virtual void UpdateSoundProps(zTSoundHandle *, int, float, float)
-	{
-		XCALL(0x004EB410);
-	}
-
-	virtual int IsSoundActive(zTSoundHandle *)
-	{
-		XCALL(0x004EB420);
-	}
-};
-
-class zCSndSys_MSS : public zCSoundSystem
-{
 public:
-	~zCSndSys_MSS()
-	{
-		XCALL(0x004EB550);
-	}
-
-	zCSoundFX *LoadSoundFX(zSTRING *)
-	{
-		XCALL(0x004ED960);
-	}
-
-	zCSoundFX *LoadSoundFXScript(zSTRING *)
-	{
-		XCALL(0x004EE120);
-	}
-
-	zCParser *GetSFXParser(void)
-	{
-		XCALL(0x004F4270);
-	}
-
-	float GetPlayingTimeMSEC(zSTRING *)
-	{
-		XCALL(0x004F40E0);
-	}
-
-	void SetSound3DDefaultRadius(float)
-	{
-		XCALL(0x004EB3A0);
-	}
-
-	float GetSound3DDefaultRadius(void)
-	{
-		XCALL(0x004EB3B0);
-	}
-
-	void SetMasterVolume(float)
-	{
-		XCALL(0x004ED8E0);
-	}
-
-	float GetMasterVolume(void)
-	{
-		XCALL(0x004ED730);
-	}
-
-	zTSoundHandle PlaySound(zCSoundFX *, int)
-	{
-		XCALL(0x004EF7B0);
-	}
-
-	zTSoundHandle PlaySound(zCSoundFX *, int, int, float, float)
-	{
-		XCALL(0x004F0B70);
-	}
-
-	zTSoundHandle PlaySound3D(zCSoundFX *, zCVob *, int, zTSound3DParams *)
-	{
-		XCALL(0x004F10F0);
-	}
-
-	zTSoundHandle PlaySound3D(zSTRING *, zCVob *, int, zTSound3DParams *)
-	{
-		XCALL(0x004F1060);
-	}
-
-	void StopSound(zTSoundHandle *)
-	{
-		XCALL(0x004F2300);
-	}
-
-	void StopAllSounds(void)
-	{
-		XCALL(0x004F23C0);
-	}
-
-	int GetSound3DProps(zTSoundHandle *, zTSound3DParams *)
-	{
-		XCALL(0x004F3780);
-	}
-
-	int UpdateSound3D(zTSoundHandle *, zTSound3DParams *)
-	{
-		XCALL(0x004F2410);
-	}
-
-	void GetSoundProps(zTSoundHandle *, int *, float *, float *)
-	{
-		XCALL(0x004F3580);
-	}
-
-	void UpdateSoundProps(zTSoundHandle *, int, float, float)
-	{
-		XCALL(0x004F3970);
-	}
-
-	int IsSoundActive(zTSoundHandle *)
-	{
-		XCALL(0x004F3FD0);
-	}
-};
-
-class zCSoundSystemDummy : public zCSoundSystem
-{
-public:
-	~zCSoundSystemDummy()
-	{
-		XCALL(0x00639000);
-	}
-
-	zCSoundFX *LoadSoundFX(zSTRING *)
-	{
-		XCALL(0x00632AC0);
-	}
-
-	zCSoundFX *LoadSoundFXScript(zSTRING *)
-	{
-		XCALL(0x004EB370);
-	}
-
-	zCParser *GetSFXParser(void)
-	{
-		XCALL(0x004EB380);
-	}
-
-	float GetPlayingTimeMSEC(zSTRING *)
-	{
-		XCALL(0x004EB390);
-	}
-
-	void SetSound3DDefaultRadius(float)
-	{
-		XCALL(0x004EB3A0);
-	}
-
-	float GetSound3DDefaultRadius(void)
-	{
-		XCALL(0x004EB3B0);
-	}
-
-	void SetMasterVolume(float)
-	{
-		XCALL(0x004EB3C0);
-	}
-
-	float GetMasterVolume(void)
-	{
-		XCALL(0x004EB3D0);
-	}
-
-	zTSoundHandle PlaySound(zCSoundFX *, int)
-	{
-		XCALL(0x00632B80);
-	}
-
-	zTSoundHandle PlaySound(zCSoundFX *, int, int, float, float)
-	{
-		XCALL(0x00632B70);
-	}
-
-	zTSoundHandle PlaySound3D(zCSoundFX *, zCVob *, int, zTSound3DParams *)
-	{
-		XCALL(0x00632BA0);
-	}
-
-	zTSoundHandle PlaySound3D(zSTRING *, zCVob *, int, zTSound3DParams *)
-	{
-		XCALL(0x00632B90);
-	}
-
-	void StopSound(zTSoundHandle *)
-	{
-		XCALL(0x004EB3E0);
-	}
-
-	void StopAllSounds(void)
-	{
-		XCALL(0x004EB3F0);
-	}
-
-	int GetSound3DProps(zTSoundHandle *, zTSound3DParams *)
-	{
-		XCALL(0x00632BB0);
-	}
-
-	int UpdateSound3D(zTSoundHandle *, zTSound3DParams *)
-	{
-		XCALL(0x00632BC0);
-	}
-
-	void GetSoundProps(zTSoundHandle *, int *, float *, float *)
-	{
-		XCALL(0x004EB400);
-	}
-
-	void UpdateSoundProps(zTSoundHandle *, int, float, float)
-	{
-		XCALL(0x004EB410);
-	}
-
-	int IsSoundActive(zTSoundHandle *)
-	{
-		XCALL(0x004EB420);
-	}
-};
-
-class zCOption
-{
-public:
-	int ReadBool(zSTRING *, char *, int)
-	{
-		XCALL(0x00462160);
-	}
+	int IsOccupied() { XCALL(0x00718CC0); }
 };

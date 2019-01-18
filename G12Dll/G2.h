@@ -6,14 +6,28 @@ WRAPPER int _rand(void) { EAXJMP(0x007D2F98); }
 WRAPPER void *_memcpy(void *Dst, void *Src, size_t Size) { EAXJMP(0x007D5320); }
 WRAPPER void *_memset(void *Dst, int Val, size_t Size) { EAXJMP(0x007DCA90); }
 
-BYTE
-GetAlpha(zCOLOR color)
+WRAPPER void GetDistanceToPoints(zVEC2 &, zVEC2 &, zVEC2 &, zVEC2 &) { EAXJMP(0x00474080); }
+
+void
+zCOLOR::SetAlphaByte(BYTE f)
 {
-	return *((BYTE *)&color + 3);
+	*((BYTE *)&this->color + 3) = f;
+}
+
+BYTE
+zCOLOR::GetAlphaByte()
+{
+	return *((BYTE *)&this->color + 3);
 }
 
 void
-SetAlpha(zCOLOR *color, BYTE alpha)
+zCArray<zCVob *>::DeleteList()
 {
-	*((BYTE *)color + 3) = alpha;
+	XCALL(0x004A5740);
+}
+
+void
+zCArray<zCVob *>::Remove(zCVob *&rem)
+{
+	XCALL(0x006D3D30);
 }
