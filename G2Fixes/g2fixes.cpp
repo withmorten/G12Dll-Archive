@@ -14,8 +14,7 @@
 
 FILE *conin, *conout;
 
-void
-hNpc::CreateVobList(float max_dist)
+void hNpc::CreateVobList(float max_dist)
 {
 	zCVob *vob;
 	oCMobInter *mob;
@@ -31,13 +30,13 @@ hNpc::CreateVobList(float max_dist)
 	{
 		for (x = 0; x < this->vobList.numInArray; x++)
 		{
-			vob = this->vobList.pArray[x];
+			vob = this->vobList.array[x];
 
 			if (vob)
 			{
 				vob->Release();
 
-				this->vobList.pArray[x] = NULL;
+				this->vobList.array[x] = NULL;
 			}
 		}
 
@@ -45,13 +44,13 @@ hNpc::CreateVobList(float max_dist)
 
 		this->trafoObjToWorld.GetTranslation(trafo_vec);
 
-		bbox.maxs.x = trafo_vec.x + max_dist;
-		bbox.maxs.y = trafo_vec.y + max_dist;
-		bbox.maxs.z = trafo_vec.z + max_dist;
+		bbox.maxs.n[0] = trafo_vec.n[0] + max_dist;
+		bbox.maxs.n[1] = trafo_vec.n[1] + max_dist;
+		bbox.maxs.n[2] = trafo_vec.n[2] + max_dist;
 
-		bbox.mins.x = trafo_vec.x - max_dist;
-		bbox.mins.y = trafo_vec.y - max_dist;
-		bbox.mins.z = trafo_vec.z - max_dist;
+		bbox.mins.n[0] = trafo_vec.n[0] - max_dist;
+		bbox.mins.n[1] = trafo_vec.n[1] - max_dist;
+		bbox.mins.n[2] = trafo_vec.n[2] - max_dist;
 
 		this->homeWorld->bspTree.bspRoot->CollectVobsInBBox3D(this->vobList, bbox);
 
@@ -59,7 +58,7 @@ hNpc::CreateVobList(float max_dist)
 		{
 			delete_vob = 0;
 
-			vob = this->vobList.pArray[x];
+			vob = this->vobList.array[x];
 
 			if (vob)
 			{
@@ -88,7 +87,7 @@ hNpc::CreateVobList(float max_dist)
 						{
 							npc = (oCNpc *)vob;
 
-							if (npc->m_nAttribute[0] <= 0 && npc->inventory2.IsEmpty(1, 1))
+							if (npc->attribute[0] <= 0 && npc->inventory2.IsEmpty(1, 1))
 							{
 								delete_vob = 1;
 							}
@@ -104,21 +103,20 @@ hNpc::CreateVobList(float max_dist)
 
 				if (delete_vob)
 				{
-					this->vobList.Remove(this->vobList.pArray[x]);
+					this->vobList.Remove(this->vobList.array[x]);
 
 					x--;
 				}
 				else
 				{
-					vob->_refCtr++;
+					vob->refCtr++;
 				}
 			}
 		}
 	}
 }
 
-void
-PatchFocus(void)
+void PatchFocus(void)
 {
 	InjectHook(0x0073369B, &hNpc::CreateVobList, PATCH_CALL);
 	InjectHook(0x00733BE9, &hNpc::CreateVobList, PATCH_CALL);
@@ -130,8 +128,7 @@ const char *Gothic1AppName = "Gothic - 2.6 (fix)";
 const char *Gothic1WorldZen = "WORLD.ZEN";
 const char *NoSound = "NEWGAME";
 
-void
-PatchGothic2(void)
+void PatchGothic2(void)
 {
 	if (G12GetPrivateProfileInt("Gothic1Mode", 0))
 	{
@@ -160,8 +157,7 @@ PatchGothic2(void)
 	}
 }
 
-void
-Init(void)
+void Init(void)
 {
 	if (G12GetPrivateProfileInt("AllocConsole", 0))
 	{
@@ -177,8 +173,7 @@ Init(void)
 	}
 }
 
-BOOL WINAPI
-DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
+BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 {
 	if (reason == DLL_PROCESS_ATTACH)
 	{

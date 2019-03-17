@@ -24,8 +24,7 @@ WRAPPER void _DllGetClassObject() { VARJMP(dinput.DllGetClassObject); }
 WRAPPER void _DllRegisterServer() { VARJMP(dinput.DllRegisterServer); }
 WRAPPER void _DllUnregisterServer() { VARJMP(dinput.DllUnregisterServer); }
 
-void
-DInput(HINSTANCE hInst)
+void DInput(HINSTANCE hInst)
 {
 	TCHAR DInputDllPath[MAX_PATH];
 
@@ -43,8 +42,7 @@ DInput(HINSTANCE hInst)
 	dinput.DllUnregisterServer = GetProcAddress(dinput.dll, "DllUnregisterServer");
 }
 
-void
-Init(void)
+void Init(void)
 {
 	char path[MAX_PATH];
 	char *p;
@@ -78,8 +76,7 @@ Init(void)
 	}
 }
 
-BOOL WINAPI
-DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
+BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 {
 	if (reason == DLL_PROCESS_ATTACH)
 	{

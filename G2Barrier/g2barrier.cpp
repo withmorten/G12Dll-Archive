@@ -21,36 +21,35 @@ char worldName[MAX_PATH];
 
 zVEC2 newPointList[38];
 
-float
-hMagFrontier::GetDistance(zVEC3 &pos, float &dist, zVEC3 &nearestPoint)
+float hMagFrontier::GetDistance(zVEC3 &pos, float &dist, zVEC3 &nearestPoint)
 {
 	float real_dist;
 	zVEC2 playerPos, point2, point1, distToPoints;
 
 	int x;
 
-	dist = 10000000.0;
+	dist = 10000000.0f;
 
-	playerPos.x = pos.x;
-	playerPos.y = pos.z;
+	playerPos.n[0] = pos.n[0];
+	playerPos.n[1] = pos.n[2];
 
-	if (playerPos.x == 0.0f && playerPos.y == 0.0f)
+	if (playerPos.n[0] == 0.0f && playerPos.n[1] == 0.0f)
 	{
 		return dist;
 	}
 
 	for (x = 1; x < 38; x++)
 	{
-		point1.x = newPointList[x - 1].x;
-		point1.y = newPointList[x - 1].y;
+		point1.n[0] = newPointList[x - 1].n[0];
+		point1.n[1] = newPointList[x - 1].n[1];
 
-		point2.x = newPointList[x].x;
-		point2.y = newPointList[x].y;
+		point2.n[0] = newPointList[x].n[0];
+		point2.n[1] = newPointList[x].n[1];
 
-		GetDistanceToPoints(point1, point2, playerPos, distToPoints);
+		GetNearestPointFromLineSegment2D(point1, point2, playerPos, distToPoints);
 
-		real_dist = sqrtf((distToPoints.y - playerPos.y) * (distToPoints.y - playerPos.y) +
-							(distToPoints.x - playerPos.x) * (distToPoints.x - playerPos.x));
+		real_dist = sqrtf((distToPoints.n[1] - playerPos.n[1]) * (distToPoints.n[1] - playerPos.n[1]) +
+							(distToPoints.n[0] - playerPos.n[0]) * (distToPoints.n[0] - playerPos.n[0]));
 
 		if (real_dist < dist)
 		{
@@ -61,8 +60,7 @@ hMagFrontier::GetDistance(zVEC3 &pos, float &dist, zVEC3 &nearestPoint)
 	return dist;
 }
 
-void
-hMagFrontier::DoCheck(void)
+void hMagFrontier::DoCheck(void)
 {
 	this->oCMagFrontier::DoCheck();
 
@@ -74,14 +72,14 @@ hMagFrontier::DoCheck(void)
 		oCWorld *World = Game->GetGameWorld();
 		if (World)
 		{
-			if (!_stricmp(World->worldName.ptr, worldName))
+			if (!_stricmp(World->worldName._Ptr, worldName))
 			{
 				if (this->npc)
 				{
 					zVEC3 playerProjPos, startPoint;
-					playerProjPos.x = this->npc->trafoObjToWorld.row[0].w;
-					playerProjPos.y = this->npc->trafoObjToWorld.row[1].w;
-					playerProjPos.z = this->npc->trafoObjToWorld.row[2].w;
+					playerProjPos.n[0] = this->npc->trafoObjToWorld.v[0].n[3];
+					playerProjPos.n[1] = this->npc->trafoObjToWorld.v[1].n[3];
+					playerProjPos.n[2] = this->npc->trafoObjToWorld.v[2].n[3];
 
 					float distToBarriere = 60000.0f;
 					this->GetDistance(playerProjPos, distToBarriere, startPoint);
@@ -118,104 +116,101 @@ hMagFrontier::DoCheck(void)
 	}
 }
 
-void
-MagicFrontierNewPointListInit(void)
+void MagicFrontierNewPointListInit(void)
 {
 	// newPointList from Gothic 1
-	newPointList[0].x = 57939.199f;
-	newPointList[0].y = 1280.28f;
-	newPointList[1].x = 55954.398f;
-	newPointList[1].y = 5421.5098f;
-	newPointList[2].x = 52856.801f;
-	newPointList[2].y = 10047.0f;
-	newPointList[3].x = 49451.898f;
-	newPointList[3].y = 14908.2f;
-	newPointList[4].x = 44199.801f;
-	newPointList[4].y = 20513.301f;
-	newPointList[5].x = 37684.199f;
-	newPointList[5].y = 26271.199f;
-	newPointList[6].x = 30434.0f;
-	newPointList[6].y = 31462.4f;
-	newPointList[7].x = 25573.6f;
-	newPointList[7].y = 32692.699f;
-	newPointList[8].x = 21248.301f;
-	newPointList[8].y = 35176.102f;
-	newPointList[9].x = 19450.699f;
-	newPointList[9].y = 35205.0f;
-	newPointList[10].x = 16263.1f;
-	newPointList[10].y = 32799.602f;
-	newPointList[11].x = 10755.6f;
-	newPointList[11].y = 34744.398f;
-	newPointList[12].x = 9736.9004f;
-	newPointList[12].y = 37990.5f;
-	newPointList[13].x = 8218.5996f;
-	newPointList[13].y = 38393.102f;
-	newPointList[14].x = 4065.0f;
-	newPointList[14].y = 39018.398f;
-	newPointList[15].x = 839.90002f;
-	newPointList[15].y = 39079.301f;
-	newPointList[16].x = -9312.9004f;
-	newPointList[16].y = 38694.199f;
-	newPointList[17].x = -19258.301f;
-	newPointList[17].y = 40991.398f;
-	newPointList[18].x = -29684.1f;
-	newPointList[18].y = 40535.699f;
-	newPointList[19].x = -39313.699f;
-	newPointList[19].y = 36558.801f;
-	newPointList[20].x = -49319.602f;
-	newPointList[20].y = 31970.199f;
-	newPointList[21].x = -54137.301f;
-	newPointList[21].y = 26761.699f;
-	newPointList[22].x = -62089.301f;
-	newPointList[22].y = 21598.1f;
-	newPointList[23].x = -66193.703f;
-	newPointList[23].y = 12999.2f;
-	newPointList[24].x = -66132.297f;
-	newPointList[24].y = 6204.0f;
-	newPointList[25].x = -63855.199f;
-	newPointList[25].y = -5700.7998f;
-	newPointList[26].x = -59385.102f;
-	newPointList[26].y = -10081.5f;
-	newPointList[27].x = -56013.801f;
-	newPointList[27].y = -22393.4f;
-	newPointList[28].x = -47250.301f;
-	newPointList[28].y = -28502.0f;
-	newPointList[29].x = -37136.5f;
-	newPointList[29].y = -38319.199f;
-	newPointList[30].x = -24664.699f;
-	newPointList[30].y = -46687.898f;
-	newPointList[31].x = -7860.6001f;
-	newPointList[31].y = -48966.602f;
-	newPointList[32].x = 4876.6001f;
-	newPointList[32].y = -49691.0f;
-	newPointList[33].x = 23147.801f;
-	newPointList[33].y = -47875.102f;
-	newPointList[34].x = 48722.301f;
-	newPointList[34].y = -39488.801f;
-	newPointList[35].x = 55902.398f;
-	newPointList[35].y = -31909.801f;
-	newPointList[36].x = 61238.602f;
-	newPointList[36].y = -23412.801f;
-	newPointList[37].x = 60230.102f;
-	newPointList[37].y = -6641.8999f;
+	newPointList[0].n[0] = 57939.199f;
+	newPointList[0].n[1] = 1280.28f;
+	newPointList[1].n[0] = 55954.398f;
+	newPointList[1].n[1] = 5421.5098f;
+	newPointList[2].n[0] = 52856.801f;
+	newPointList[2].n[1] = 10047.0f;
+	newPointList[3].n[0] = 49451.898f;
+	newPointList[3].n[1] = 14908.2f;
+	newPointList[4].n[0] = 44199.801f;
+	newPointList[4].n[1] = 20513.301f;
+	newPointList[5].n[0] = 37684.199f;
+	newPointList[5].n[1] = 26271.199f;
+	newPointList[6].n[0] = 30434.0f;
+	newPointList[6].n[1] = 31462.4f;
+	newPointList[7].n[0] = 25573.6f;
+	newPointList[7].n[1] = 32692.699f;
+	newPointList[8].n[0] = 21248.301f;
+	newPointList[8].n[1] = 35176.102f;
+	newPointList[9].n[0] = 19450.699f;
+	newPointList[9].n[1] = 35205.0f;
+	newPointList[10].n[0] = 16263.1f;
+	newPointList[10].n[1] = 32799.602f;
+	newPointList[11].n[0] = 10755.6f;
+	newPointList[11].n[1] = 34744.398f;
+	newPointList[12].n[0] = 9736.9004f;
+	newPointList[12].n[1] = 37990.5f;
+	newPointList[13].n[0] = 8218.5996f;
+	newPointList[13].n[1] = 38393.102f;
+	newPointList[14].n[0] = 4065.0f;
+	newPointList[14].n[1] = 39018.398f;
+	newPointList[15].n[0] = 839.90002f;
+	newPointList[15].n[1] = 39079.301f;
+	newPointList[16].n[0] = -9312.9004f;
+	newPointList[16].n[1] = 38694.199f;
+	newPointList[17].n[0] = -19258.301f;
+	newPointList[17].n[1] = 40991.398f;
+	newPointList[18].n[0] = -29684.1f;
+	newPointList[18].n[1] = 40535.699f;
+	newPointList[19].n[0] = -39313.699f;
+	newPointList[19].n[1] = 36558.801f;
+	newPointList[20].n[0] = -49319.602f;
+	newPointList[20].n[1] = 31970.199f;
+	newPointList[21].n[0] = -54137.301f;
+	newPointList[21].n[1] = 26761.699f;
+	newPointList[22].n[0] = -62089.301f;
+	newPointList[22].n[1] = 21598.1f;
+	newPointList[23].n[0] = -66193.703f;
+	newPointList[23].n[1] = 12999.2f;
+	newPointList[24].n[0] = -66132.297f;
+	newPointList[24].n[1] = 6204.0f;
+	newPointList[25].n[0] = -63855.199f;
+	newPointList[25].n[1] = -5700.7998f;
+	newPointList[26].n[0] = -59385.102f;
+	newPointList[26].n[1] = -10081.5f;
+	newPointList[27].n[0] = -56013.801f;
+	newPointList[27].n[1] = -22393.4f;
+	newPointList[28].n[0] = -47250.301f;
+	newPointList[28].n[1] = -28502.0f;
+	newPointList[29].n[0] = -37136.5f;
+	newPointList[29].n[1] = -38319.199f;
+	newPointList[30].n[0] = -24664.699f;
+	newPointList[30].n[1] = -46687.898f;
+	newPointList[31].n[0] = -7860.6001f;
+	newPointList[31].n[1] = -48966.602f;
+	newPointList[32].n[0] = 4876.6001f;
+	newPointList[32].n[1] = -49691.0f;
+	newPointList[33].n[0] = 23147.801f;
+	newPointList[33].n[1] = -47875.102f;
+	newPointList[34].n[0] = 48722.301f;
+	newPointList[34].n[1] = -39488.801f;
+	newPointList[35].n[0] = 55902.398f;
+	newPointList[35].n[1] = -31909.801f;
+	newPointList[36].n[0] = 61238.602f;
+	newPointList[36].n[1] = -23412.801f;
+	newPointList[37].n[0] = 60230.102f;
+	newPointList[37].n[1] = -6641.8999f;
 }
 
-void
-MagicFrontierNewPointListInitGRM(void)
+void MagicFrontierNewPointListInitGRM(void)
 {
 	// newPointList from GRM
-	newPointList[17].x = -26219.2f;
-	newPointList[17].y = 40844.2f;
-	newPointList[18].x = -34576.0f;
-	newPointList[18].y = 43032.3f;
-	newPointList[19].x = -44458.8f;
-	newPointList[19].y = 43099.2f;
-	newPointList[20].x = -49763.7f;
-	newPointList[20].y = 37384.8f;
+	newPointList[17].n[0] = -26219.2f;
+	newPointList[17].n[1] = 40844.2f;
+	newPointList[18].n[0] = -34576.0f;
+	newPointList[18].n[1] = 43032.3f;
+	newPointList[19].n[0] = -44458.8f;
+	newPointList[19].n[1] = 43099.2f;
+	newPointList[20].n[0] = -49763.7f;
+	newPointList[20].n[1] = 37384.8f;
 }
 
-void
-PatchMagicFrontier(void)
+void PatchMagicFrontier(void)
 {
 	if (G12GetPrivateProfileInt("MagicFrontierEnable", 0))
 	{
@@ -251,7 +246,11 @@ int Barrier_FadeTimer;
 int Barrier_TimeOn, Barrier_TimeOnMin, Barrier_TimeOnMax;
 int Barrier_TimeOff, Barrier_TimeOffMin, Barrier_TimeOffMax;
 
-int hBarrier_bThunder1, hBarrier_bThunder2, hBarrier_bThunder3, hBarrier_bThunder4;
+int Barrier_TremorEnable;
+int Barrier_TremorDelayTime, Barrier_TremorDelayTimeMin, Barrier_TremorDelayTimeMax;
+int Barrier_TremorTimer = 0;
+
+int hBarrier_activeThunder_Sector1, hBarrier_activeThunder_Sector2, hBarrier_activeThunder_Sector3, hBarrier_activeThunder_Sector4;
 
 zCSoundFX *hBarrier_sfx1, *hBarrier_sfx2, *hBarrier_sfx3, *hBarrier_sfx4;
 zTSoundHandle hBarrier_sfxHandle1, hBarrier_sfxHandle2, hBarrier_sfxHandle3, hBarrier_sfxHandle4;
@@ -266,12 +265,25 @@ zCSoundSystem *SoundSystem;
 myThunder oCBarrier_myThunderTemp[NEW_NUM_MAX_THUNDERS], hBarrier_myThunderTemp[NEW_NUM_MAX_THUNDERS];
 int oCBarrier_numMyThundersTemp, hBarrier_numMyThundersTemp;
 
-int
-hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
+void hBarrier::AddTremor(zTRenderContext &renderContext)
+{
+	oCNpc *hero = *(oCNpc **)0x00AB2684; // oCNpc::player
+
+	oCVisualFX *vfx = oCVisualFX::CreateAndPlay(zSTRING("FX_EarthQuake"), hero, hero, 0, 0, 0, 0);
+
+	if (vfx)
+	{
+		vfx->Release();
+
+		vfx = NULL;
+	}
+}
+
+int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
 {
 	zCRnd_D3D *Renderer = *(zCRnd_D3D **)0x00982F08; // zrenderer
 	zCCamera *Camera = *(zCCamera **)0x008D7F94; // zCCamera::activeCam
-	zCMaterial *FrontierMat = this->skySphereMesh->polyList[0]->Material;
+	zCMaterial *FrontierMat = this->skySphereMesh->polyList[0]->material;
 
 	int zBufferWriteEnabled = Renderer->GetZBufferWriteEnabled();
 	float farClipZ = Camera->farClipZ;
@@ -307,6 +319,19 @@ hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
 				this->fadeOut = 0;
 				this->bFadeInOut = 0;
 				Barrier_FadeTimer = Barrier_TimeOffMin + _rand() % ((Barrier_TimeOffMax + 1) - Barrier_TimeOffMin);
+
+				if (Barrier_TremorEnable)
+				{
+					if (Barrier_TremorTimer)
+					{
+						Barrier_TremorTimer--;
+					}
+					else
+					{
+						this->AddTremor(rndContext);
+						Barrier_TremorTimer = Barrier_TremorDelayTimeMin + _rand() % ((Barrier_TremorDelayTimeMax + 1) - Barrier_TremorDelayTimeMin);
+					}
+				}
 			}
 		}
 		else if (!this->bFadeInOut)
@@ -350,11 +375,11 @@ hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
 		sound3DParams.isAmbient3D = 0;
 		sound3DParams.pitchOffset = -999999.0f;
 
-		if (!hBarrier_bThunder1 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle1) &&
+		if (!hBarrier_activeThunder_Sector1 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle1) &&
 			*(float *)0x0099B3DC - delayTimeSector1 > 8000.f) // actualTime
 		{
 			this->AddThunder(this->startPointList1[(this->numStartPoints1 - 1) & _rand()], 11, 0, 1);
-			hBarrier_bThunder1 = 1;
+			hBarrier_activeThunder_Sector1 = 1;
 			delayTimeSector1 = *(float *)0x0099B3DC; // actualTime
 
 			if (!hBarrier_sfx1)
@@ -365,11 +390,11 @@ hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
 			hBarrier_sfxHandle1 = SoundSystem->PlaySound3D(hBarrier_sfx1, Camera->connectedVob, 0, &sound3DParams);
 		}
 
-		if (!hBarrier_bThunder2 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle2) &&
+		if (!hBarrier_activeThunder_Sector2 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle2) &&
 			*(float *)0x0099B3DC - delayTimeSector2 > 6000.f) // actualTime
 		{
 			this->AddThunder(this->startPointList2[(this->numStartPoints2 - 1) & _rand()], 11, 0, 2);
-			hBarrier_bThunder2 = 1;
+			hBarrier_activeThunder_Sector2 = 1;
 			delayTimeSector2 = *(float *)0x0099B3DC; // actualTime
 
 			if (!hBarrier_sfx2)
@@ -380,11 +405,11 @@ hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
 			hBarrier_sfxHandle2 = SoundSystem->PlaySound3D(hBarrier_sfx2, Camera->connectedVob, 0, &sound3DParams);
 		}
 
-		if (!hBarrier_bThunder3 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle3) &&
+		if (!hBarrier_activeThunder_Sector3 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle3) &&
 			*(float *)0x0099B3DC - delayTimeSector3 > 14000.f) // actualTime
 		{
 			this->AddThunder(this->startPointList3[(this->numStartPoints3 - 1) & _rand()], 11, 0, 3);
-			hBarrier_bThunder3 = 1;
+			hBarrier_activeThunder_Sector3 = 1;
 			delayTimeSector3 = *(float *)0x0099B3DC; // actualTime
 
 			if (!hBarrier_sfx3)
@@ -395,11 +420,11 @@ hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
 			hBarrier_sfxHandle3 = SoundSystem->PlaySound3D(hBarrier_sfx3, Camera->connectedVob, 0, &sound3DParams);
 		}
 
-		if (!hBarrier_bThunder4 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle4) &&
+		if (!hBarrier_activeThunder_Sector4 && !SoundSystem->IsSoundActive(hBarrier_sfxHandle4) &&
 			*(float *)0x0099B3DC - delayTimeSector4 > 2000.f) // actualTime
 		{
 			this->AddThunder(this->startPointList4[(this->numStartPoints4 - 1) & _rand()], 11, 0, 4);
-			hBarrier_bThunder4 = 1;
+			hBarrier_activeThunder_Sector4 = 1;
 			delayTimeSector4 = *(float *)0x0099B3DC; // actualTime
 
 			if (!hBarrier_sfx4)
@@ -444,81 +469,80 @@ hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
 	return fadeInOut;
 }
 
-int
-hBarrier::RenderThunder(myThunder *thunder, zTRenderContext &rndContext)
+int hBarrier::RenderThunder(myThunder *thunder, zTRenderContext &rndContext)
 {
-	if (!thunder->m_bActive)
+	if (!thunder->valid)
 	{
 		return 0;
 	}
 
-	thunder->m_nEndVisSeg = *(float *)0x0099B3D8 * 0.0049999999f + thunder->m_nEndVisSeg; // frameTimeF
+	thunder->t1 = *(float *)0x0099B3D8 * 0.0049999999f + thunder->t1; // frameTimeF
 
-	if (thunder->m_nStartVisSeg >= 0.89999998f)
+	if (thunder->t0 >= 0.89999998f)
 	{
-		thunder->m_nStartVisSeg = 0.89999998f;
+		thunder->t0 = 0.89999998f;
 	}
 
-	if (thunder->m_nEndVisSeg >= 0.89999998f)
+	if (thunder->t1 >= 0.89999998f)
 	{
-		thunder->m_nEndVisSeg = 0.89999998f;
+		thunder->t1 = 0.89999998f;
 	}
 
-	if (thunder->m_pPolyStrip->numSeg <= 2)
+	if (thunder->polyStrip->numSeg <= 2)
 	{
-		thunder->m_nStartVisSeg = 0.89999998f;
+		thunder->t0 = 0.89999998f;
 	}
 
-	if (thunder->m_nStartVisSeg >= 0.89999998f
-		&& thunder->m_nEndVisSeg >= 0.89999998f
-		&& thunder->m_nNumSubThunders <= 0)
+	if (thunder->t0 >= 0.89999998f
+		&& thunder->t1 >= 0.89999998f
+		&& thunder->numChilds <= 0)
 	{
-		if (!thunder->m_bIsSubThunder)
+		if (!thunder->isChild)
 		{
-			if (thunder->m_Sector == 1)
+			if (thunder->sector == 1)
 			{
-				hBarrier_bThunder1 = 0;
+				hBarrier_activeThunder_Sector1 = 0;
 			}
-			if (thunder->m_Sector == 2)
+			if (thunder->sector == 2)
 			{
-				hBarrier_bThunder2 = 0;
+				hBarrier_activeThunder_Sector2 = 0;
 			}
-			if (thunder->m_Sector == 3)
+			if (thunder->sector == 3)
 			{
-				hBarrier_bThunder3 = 0;
+				hBarrier_activeThunder_Sector3 = 0;
 			}
-			if (thunder->m_Sector == 4)
+			if (thunder->sector == 4)
 			{
-				hBarrier_bThunder4 = 0;
+				hBarrier_activeThunder_Sector4 = 0;
 			}
 
 			this->numMyThunders--;
 		}
 
 		this->RemoveThunder(thunder);
-		thunder->m_bActive = 0;
+		thunder->valid = 0;
 
 		return 0;
 	}
 
-	if (thunder->m_nStartVisSeg != thunder->m_nEndVisSeg)
+	if (thunder->t0 != thunder->t1)
 	{
-		thunder->m_pPolyStrip->SetVisibleSegments(thunder->m_nStartVisSeg, thunder->m_nEndVisSeg);
-		thunder->m_pPolyStrip->Render(rndContext);
+		thunder->polyStrip->SetVisibleSegments(thunder->t0, thunder->t1);
+		thunder->polyStrip->Render(rndContext);
 	}
 
-	for (int x = 0; x < thunder->m_nNumSubThunders; x++)
+	for (int x = 0; x < thunder->numChilds; x++)
 	{
-		if (thunder->m_nEndVisSeg >= thunder->m_fSubStartSeg[x])
+		if (thunder->t1 >= thunder->startTime[x])
 		{
-			if (!this->RenderThunder(&thunder->m_pSubThunders[x], rndContext))
+			if (!this->oCBarrier::RenderThunder(&thunder->childs[x], rndContext))
 			{
-				thunder->m_nNumSubThunders--;
+				thunder->numChilds--;
 			}
 		}
 	}
 
-	if (!thunder->m_bIsSubThunder)
+	if (!thunder->isChild)
 	{
 		zMAT4 mat, matTemp, matTemp2;
 
@@ -526,70 +550,72 @@ hBarrier::RenderThunder(myThunder *thunder, zTRenderContext &rndContext)
 		mat = *(zMAT4 *)0x008D45E8; // zMAT4::s_identity
 		mat = rndContext.cam->GetTransform(1);
 
-		mat.row[0].z = mat.row[0].z * -1.0f;
-		mat.row[1].z = mat.row[1].z * -1.0f;
-		mat.row[2].z = mat.row[2].z * -1.0f;
+		mat.v[0].n[2] *= -1.0f;
+		mat.v[1].n[2] *= -1.0f;
+		mat.v[2].n[2] *= -1.0f;
 
-		mat.row[0].w = thunder->m_vPosition.x;
-		mat.row[1].w = thunder->m_vPosition.y;
-		mat.row[2].w = thunder->m_vPosition.z;
+		mat.v[0].n[3] = thunder->originVec.n[0];
+		mat.v[1].n[3] = thunder->originVec.n[1];
+		mat.v[2].n[3] = thunder->originVec.n[2];
 
 		matTemp2 = rndContext.cam->GetTransform(0);
 
 		rndContext.cam->SetTransform(0, mat);
+
+		this->thunderStartDecal->SetDecalDim(5000.0f, 5000.0f);
 		this->thunderStartDecal->Render(rndContext);
+		this->thunderStartDecal->SetDecalDim(4000.0f, 4000.0f);
+
 		rndContext.cam->SetTransform(0, matTemp2);
 	}
 
 	return 1;
 }
 
-void
-Barrier_Init(void)
+void Barrier_Init(void)
 {
 	oCBarrier *Barrier = SkyControler_Barrier->barrier;
 	Barrier->bFadeInOut = 1;
 
 	zCMesh *FrontierMesh = Barrier->skySphereMesh;
-	zCMaterial *FrontierMat = FrontierMesh->polyList[0]->Material;
+	zCMaterial *FrontierMat = FrontierMesh->polyList[0]->material;
 
-	zSTRING BarrierTexture("BARRIERE.TGA");
-	FrontierMat->SetTexture(BarrierTexture);
+	FrontierMat->SetTexture(zSTRING("BARRIERE.TGA"));
 	FrontierMat->rndAlphaBlendFunc = zRND_ALPHA_FUNC_ADD;
 	FrontierMat->color.SetAlphaByte((BYTE)Barrier->fadeState);
 
 	int numPolys = FrontierMesh->numPoly;
-	float maxHeight = FrontierMesh->bbox3D.maxs.y;
+	float maxHeight = FrontierMesh->bbox3D.maxs.n[1];
 	float minHeight = maxHeight * 0.925000011920929f;
 
 	for (int i = 0; i < numPolys; i++)
 	{
 		zCPolygon *Poly = FrontierMesh->polyList[i];
-		int numVerts = Poly->PolyNumVert;
+		int numVerts = Poly->polyNumVert;
 
 		for (int j = 0; j < numVerts; j++)
 		{
 			int alpha;
 
-			zCVertFeature *Feat = Poly->Features[j];
-			zCVertex *Vert = Poly->Vertices[j];
+			zCVertFeature *Feat = Poly->features[j];
+			zCVertex *Vert = Poly->vertex[j];
 
-			if (Vert->position.y <= minHeight)
+			if (Vert->position.n[1] <= minHeight)
 			{
-				alpha = (int)(Vert->position.y * 0.0001250000059371814f * 255.0f);
+				alpha = (int)(Vert->position.n[1] * 0.0001250000059371814f * 255.0f);
 			}
 			else
 			{
-				alpha = (int)((maxHeight - Vert->position.y) * 255.0f / (maxHeight - minHeight));
+				alpha = (int)((maxHeight - Vert->position.n[1]) * 255.0f / (maxHeight - minHeight));
 			}
 
 			if (alpha > 255) alpha = 255;
 			if (alpha < 0) alpha = 0;
 
-			Feat->lightDyn.color = BARRIER_COLOR;
+			Feat->lightDyn.dword = BARRIER_COLOR;
 			Feat->lightDyn.SetAlphaByte((BYTE)alpha);
 
-			Feat->lightStat.color = BARRIER_COLOR;
+			Feat->lightStat.dword = BARRIER_COLOR;
 			Feat->lightStat.SetAlphaByte((BYTE)alpha);
 		}
 	}
@@ -608,16 +634,15 @@ ASM(Barrier_Init_Hook)
 	}
 }
 
-void
-hSkyControler_Barrier::RenderSkyPre(void)
+void hSkyControler_Barrier::RenderSkyPre(void)
 {
 	this->zCSkyControler_Outdoor::RenderSkyPre();
 
 	hBarrier *Barrier = (hBarrier *)this->barrier;
 
-	if (!*(int *)0x00AB040C) // barrierInited
+	if (!*(int *)0x00AB040C) // meshLoaded
 	{
-		*(int *)0x00AB040C = 1; // barrierInited
+		*(int *)0x00AB040C = 1; // meshLoaded
 
 		zCOption *Options = *(zCOption **)0x008CD988; // zoptions
 
@@ -637,10 +662,10 @@ hSkyControler_Barrier::RenderSkyPre(void)
 			Barrier->fadeState = BARRIER_ALPHA_MAX;
 		}
 
-		hBarrier_bThunder1 = 0;
-		hBarrier_bThunder2 = 0;
-		hBarrier_bThunder3 = 0;
-		hBarrier_bThunder4 = 0;
+		hBarrier_activeThunder_Sector1 = 0;
+		hBarrier_activeThunder_Sector2 = 0;
+		hBarrier_activeThunder_Sector3 = 0;
+		hBarrier_activeThunder_Sector4 = 0;
 
 		hBarrier_sfx1 = NULL;
 		hBarrier_sfxHandle1 = 0;
@@ -652,11 +677,6 @@ hSkyControler_Barrier::RenderSkyPre(void)
 		hBarrier_sfxHandle4 = 0;
 
 		Barrier_FadeTimer = 0;
-
-		if (Barrier_G1DecalDim)
-		{
-			Barrier->thunderStartDecal->SetDecalDim(5000.0f, 5000.0f);
-		}
 
 		Barrier->Init();
 
@@ -682,20 +702,19 @@ hSkyControler_Barrier::RenderSkyPre(void)
 		rndContext.world = Camera->connectedVob->homeWorld;
 		rndContext.vob = Camera->connectedVob;
 
-		_memcpy(this->barrier->myThunderList, &oCBarrier_myThunderTemp, sizeof(myThunder) * NEW_NUM_MAX_THUNDERS);
-		this->barrier->numMyThunders = oCBarrier_numMyThundersTemp;
+		Barrier->myThunderList = oCBarrier_myThunderTemp;
+		Barrier->numMyThunders = oCBarrier_numMyThundersTemp;
 
 		Barrier->oCBarrier::Render(rndContext, 0, 0);
 
-		_memcpy(&oCBarrier_myThunderTemp, this->barrier->myThunderList, sizeof(myThunder) * NEW_NUM_MAX_THUNDERS);
-		oCBarrier_numMyThundersTemp = this->barrier->numMyThunders;
+		oCBarrier_numMyThundersTemp = Barrier->numMyThunders;
 	}
 
 	oCGame *Game = *(oCGame **)0x00AB0884; // ogame
 
 	if ((*(int *)0x008A5DB0 // zCSkyControler::s_skyEffectsEnabled
 		|| Barrier_IgnoreSkyEffectsSetting)
-		&& !_stricmp(Game->GetGameWorld()->worldName.ptr, worldName))
+		&& !_stricmp(Game->GetGameWorld()->worldName._Ptr, worldName))
 	{
 		_memset(&rndContext, 0x00, sizeof(zTRenderContext));
 		rndContext.clipFlags = -1;
@@ -703,18 +722,16 @@ hSkyControler_Barrier::RenderSkyPre(void)
 		rndContext.world = Camera->connectedVob->homeWorld;
 		rndContext.vob = Camera->connectedVob;
 
-		_memcpy(this->barrier->myThunderList, &hBarrier_myThunderTemp, sizeof(myThunder) * NEW_NUM_MAX_THUNDERS);
-		this->barrier->numMyThunders = hBarrier_numMyThundersTemp;
+		Barrier->myThunderList = hBarrier_myThunderTemp;
+		Barrier->numMyThunders = hBarrier_numMyThundersTemp;
 
 		Barrier->Render(rndContext, 0, 0);
 
-		_memcpy(&hBarrier_myThunderTemp, this->barrier->myThunderList, sizeof(myThunder) * NEW_NUM_MAX_THUNDERS);
-		hBarrier_numMyThundersTemp = this->barrier->numMyThunders;
+		hBarrier_numMyThundersTemp = Barrier->numMyThunders;
 	}
 }
 
-void
-PatchBarrier(void)
+void PatchBarrier(void)
 {
 	if (G12GetPrivateProfileInt("BarrierEnable", 0))
 	{
@@ -732,6 +749,11 @@ PatchBarrier(void)
 		Barrier_TimeOffMin = Barrier_TimeOff - (Barrier_TimeOff / 10);
 		Barrier_TimeOffMax = Barrier_TimeOff + (Barrier_TimeOff / 10);
 
+		Barrier_TremorEnable = G12GetPrivateProfileInt("BarrierTremorEnable", 0);
+		Barrier_TremorDelayTime = G12GetPrivateProfileInt("BarrierTremorDelayTime", 20);
+		Barrier_TremorDelayTimeMin = Barrier_TremorDelayTime - (Barrier_TremorDelayTime / 10);
+		Barrier_TremorDelayTimeMax = Barrier_TremorDelayTime + (Barrier_TremorDelayTime / 10);
+
 		// Hook in oCBarrier::Init() to add barrier texture
 		InjectHook(0x006B94F9, Barrier_Init_Hook, PATCH_JUMP);
 
@@ -740,15 +762,13 @@ PatchBarrier(void)
 	}
 }
 
-void
-PatchGothic2(void)
+void PatchGothic2(void)
 {
 	PatchBarrier();
 	PatchMagicFrontier();
 }
 
-void
-Init(void)
+void Init(void)
 {
 	if (G12GetPrivateProfileInt("AllocConsole", 0))
 	{
@@ -764,8 +784,7 @@ Init(void)
 	}
 }
 
-BOOL WINAPI
-DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
+BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 {
 	if (reason == DLL_PROCESS_ATTACH)
 	{

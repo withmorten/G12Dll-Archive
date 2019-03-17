@@ -6,28 +6,24 @@ WRAPPER int _rand(void) { EAXJMP(0x007D2F98); }
 WRAPPER void *_memcpy(void *Dst, void *Src, size_t Size) { EAXJMP(0x007D5320); }
 WRAPPER void *_memset(void *Dst, int Val, size_t Size) { EAXJMP(0x007DCA90); }
 
-WRAPPER void GetDistanceToPoints(zVEC2 &, zVEC2 &, zVEC2 &, zVEC2 &) { EAXJMP(0x00474080); }
+WRAPPER void GetNearestPointFromLineSegment2D(zVEC2 &, zVEC2 &, zVEC2 &, zVEC2 &) { EAXJMP(0x00474080); }
 
-void
-zCOLOR::SetAlphaByte(BYTE f)
+void zCOLOR::SetAlphaByte(BYTE f)
 {
-	*((BYTE *)&this->color + 3) = f;
+	this->alpha = f;
 }
 
-BYTE
-zCOLOR::GetAlphaByte()
+BYTE zCOLOR::GetAlphaByte()
 {
-	return *((BYTE *)&this->color + 3);
+	return this->alpha;
 }
 
-void
-zCArray<zCVob *>::DeleteList()
+void zCArray<zCVob *>::DeleteList()
 {
 	XCALL(0x004A5740);
 }
 
-void
-zCArray<zCVob *>::Remove(zCVob *&rem)
+void zCArray<zCVob *>::Remove(zCVob *&rem)
 {
 	XCALL(0x006D3D30);
 }

@@ -1,4 +1,6 @@
+#ifdef PlaySound
 #undef PlaySound
+#endif
 
 #define zRND_ALPHA_FUNC_ADD 3
 
@@ -14,6 +16,9 @@ struct oTVobList;
 struct oTVobListNpcs;
 struct oTVobListItems;
 
+struct myPoly;
+struct myVert;
+
 struct zTNode;
 
 class zCLightMap;
@@ -24,7 +29,6 @@ class zCSoundFX;
 class zCDecal;
 class zCViewBase;
 class zCWorld;
-class zCTree;
 class zCBspLeaf;
 class zCAIBase;
 class zCRigidBody;
@@ -81,7 +85,7 @@ class oCVob;
 template<class T> class zCArray
 {
 public:
-	T *pArray;
+	T *array;
 	int numAlloc;
 	int numInArray;
 
@@ -111,23 +115,58 @@ public:
 	zCListSort *next;
 };
 
-class zSTRING
+template<class T> class zCTree
+{
+	zCTree *parent;
+	zCTree *firstChild;
+	zCTree *next;
+	zCTree *prev;
+	T *data;
+};
+
+template<class T, int SIZE> class zCMatrixStack
 {
 public:
-	void *_vftable;
-	int _allocator;
-	char *ptr;
-	int len;
-	int res;
+	int pos;
+	T stack[SIZE];
+};
+
+template<class _Ty> class _A {};
+
+class std_string
+{
+public:
+	_A<char *> allocator;
+	char *_Ptr;
+	int _Len;
+	int _Res;
+};
+
+class zSTRING : public std_string
+{
+public:
+	virtual void *vector_deleting_destructor(unsigned int) { XCALL(0x0041C760); }
 
 public:
+	zSTRING() { XCALL(0x00402AF0); }
 	zSTRING(char *) { XCALL(0x004010C0); }
 };
 
 class zCOLOR
 {
 public:
-	int color;
+	union
+	{
+		struct
+		{
+			BYTE b;
+			BYTE g;
+			BYTE r;
+			BYTE alpha;
+		};
+
+		DWORD dword;
+	};
 
 public:
 	void SetAlphaByte(BYTE);
@@ -137,41 +176,35 @@ public:
 class zVEC2
 {
 public:
-	float x;
-	float y;
+	float n[2];
 };
 
 class zVEC3
 {
 public:
-	float x;
-	float y;
-	float z;
+	float n[3];
 };
 
 class zVEC4
 {
 public:
-	float x;
-	float y;
-	float z;
-	float w;
+	float n[4];
 };
 
 class zMAT4
 {
 public:
-	zVEC4 row[4];
+	zVEC4 v[4];
 
 public:
-	zMAT4 *operator=(zMAT4 &) { XCALL(0x00514D80); }
+	zMAT4 &operator=(zMAT4 &) { XCALL(0x00514D80); }
 	void GetTranslation(zVEC3 &) { XCALL(0x00487C70); }
 };
 
 struct zTPlane
 {
-	float m_fD;
-	zVEC3 m_vNormal;
+	float distance;
+	zVEC3 normal;
 };
 
 struct zTBBox3D
@@ -249,24 +282,12 @@ struct zTRainFX
 
 struct zTTraceRayReport
 {
-	int m_BIntersect;
-	zCVob *m_pVob;
-	zCPolygon *m_pPolygon;
-	zVEC3 m_vIntersect;
-	zVEC3 m_vNormal;
-	zCVertex *m_pVertex;
-};
-
-struct zTBoxSortHandle
-{
-	void *_vftable;
-	zCBBox3DSorterBase *mySorter;
-	zTBBox3D bbox3D;
-
-	int indexBegin[3];
-	int indexEnd[3];
-
-	zCArray<zCVob *> activeList;
+	int foundHit;
+	zCVob *foundVob;
+	zCPolygon *foundPoly;
+	zVEC3 foundIntersection;
+	zVEC3 foundPolyNormal;
+	zCVertex *foundVertex;
 };
 
 struct zTSound3DParams
@@ -281,6 +302,23 @@ struct zTSound3DParams
 	float pitchOffset;
 };
 
+struct myThunder
+{
+	zVEC3 originVec;
+	myThunder *childs;
+	int numChilds;
+	float startTime[5];
+	zCPolyStrip *polyStrip;
+	int numSegs;
+	int valid;
+	float t0;
+	float t1;
+	int numSplits;
+	int dead;
+	int isChild;
+	int sector;
+};
+
 class zCClassDef
 {
 public:
@@ -288,8 +326,8 @@ public:
 	zSTRING baseClassName;
 	zSTRING scriptClassName;
 	zCClassDef *baseClassDef;
-	zCObject *createNewInstance;
-	zCObject *createNewInstanceBackup;
+	zCObject (*createNewInstance) (void);
+	zCObject (*createNewInstanceBackup) (void);
 	unsigned int classFlags;
 	unsigned int classSize;
 	int numLivingObjects;
@@ -303,16 +341,31 @@ public:
 class zCObject
 {
 public:
-	int _refCtr;
-	int _hashIndex;
-	int _hashNext;
-	zSTRING _objectName;
+	int refCtr;
+	int hashIndex;
+	zCObject *hashNext;
+	zSTRING objectName;
 
 public:
 	virtual zCClassDef *_GetClassDef() { XCALL(0x00401EC0); }
 
 public:
 	int Release() { XCALL(0x0040C310); }
+};
+
+class zTBoxSortHandle
+{
+public:
+	zCBBox3DSorterBase *mySorter;
+	zTBBox3D bbox3D;
+
+	int indexBegin[3];
+	int indexEnd[3];
+
+	zCArray<zCVob *> activeList;
+
+public:
+	virtual void *scalar_deleting_destructor(unsigned int) { XCALL(0x0083A610); }
 };
 
 class zCVisual : public zCObject
@@ -322,6 +375,9 @@ public:
 	zCVisual *prevLODVisual;
 	float lodFarDistance;
 	float lodNearFadeOutDistance;
+
+public:
+	zCVisual() { XCALL(0x00606660); }
 };
 
 class zCVertex
@@ -333,7 +389,7 @@ public:
 	{
 		struct
 		{
-			int mytransforminedIndex;
+			int transformedIndex;
 			int myIndex;
 		};
 
@@ -354,30 +410,28 @@ public:
 class zCPolygon
 {
 public:
-	zCVertex **Vertices;
+	zCVertex **vertex;
 
-	int LastTimeDrawn;
-	zTPlane PolyPlane;
-	zCMaterial *Material;
-	zCLightMap *Lightmap;
+	int lastTimeDrawn;
+	zTPlane polyPlane;
+	zCMaterial *material;
+	zCLightMap *lightmap;
 
-	zCVertex **ClipVertices;
-	zCVertFeature **ClipFeatures;
-	int NumClipVert;
+	zCVertex **clipVert;
+	zCVertFeature **clipFeat;
+	int numClipVert;
 
-	zCVertFeature **Features;
-	unsigned char PolyNumVert;
+	zCVertFeature **features;
+	unsigned char polyNumVert;
 };
 
 class zCOBBox3D
 {
 public:
-	zVEC3 m_vCenter;
-	zVEC3 m_vAxisX;
-	zVEC3 m_vAxisY;
-	zVEC3 m_vAxisZ;
-	zVEC3 m_vExtent;
-	zCList<zCOBBox3D> m_lstHierarchy;
+	zVEC3 center;
+	zVEC3 axis[3];
+	zVEC3 extent;
+	zCList<zCOBBox3D> childs;
 };
 
 class zCMesh : public zCVisual
@@ -414,11 +468,11 @@ public:
 class zCTexAniCtrl
 {
 public:
-	int m_nTexAnimatedChannel;
-	float m_fCurrentFrame;
-	float m_fTexAniFPS;
-	int m_mFrameCtr;
-	int m_bNoLoopTexAni;
+	int aniChannel;
+	float actFrame;
+	float aniFPS;
+	int frameCtr;
+	int bOneShotAni;
 };
 
 class zCMaterial : public zCObject
@@ -459,15 +513,15 @@ public:
 
 	int m_enuWaveMode;
 	int m_enuWaveSpeed;
-	int m_fWaveMaxAmplitude;
-	int m_fWaveGridSize;
+	float m_fWaveMaxAmplitude;
+	float m_fWaveGridSize;
 
-	int detailTexture;
-	int detailTextureScale;
-	int texAniMapDelta[2];
+	zCTexture *detailTexture;
+	float detailTextureScale;
+	zVEC2 texAniMapDelta;
 
-	int default_mapping[2];
-	int texScale[2];
+	zVEC2 default_mapping;
+	zVEC2 texScale;
 
 public:
 	void SetTexture(zSTRING &) { XCALL(0x005649E0); }
@@ -476,7 +530,7 @@ public:
 class zCVob : public zCObject
 {
 public:
-	zCTree *globalVobTreeNode;
+	zCTree<zCVob> *globalVobTreeNode;
 	int lastTimeDrawn;
 	int lastTimeCollected;
 
@@ -571,12 +625,9 @@ public:
 	zMAT4 trafoViewInv;
 	zMAT4 trafoWOrld;
 
-	int trafoViewStackPos;
-	zMAT4 trafoViewStack[8];
-	int trafoWorldStackPos;
-	zMAT4 trafoWorldStack[8];
-	int trafoWorldViewStackPos;
-	zMAT4 trafoWorldViewStack[8];
+	zCMatrixStack<zMAT4, 8> trafoViewStack;
+	zCMatrixStack<zMAT4, 8> trafoWorldStack;
+	zCMatrixStack<zMAT4, 8> trafoWorldViewStack;
 	zMAT4 trafoProjection;
 
 	zTCamVertSimple polyCamVerts[4];
@@ -666,28 +717,9 @@ public:
 	};
 
 public:
+	zCPolyStrip() { XCALL(0x005BD300); }
 	void SetVisibleSegments(float, float) { XCALL(0x005BDB90); }
 	int Render(zTRenderContext &) { XCALL(0x005BDC70); }
-};
-
-class myThunder
-{
-public:
-	zVEC3 m_vPosition;
-	myThunder *m_pSubThunders;
-	int m_nNumSubThunders;
-	float m_fSubStartSeg[3];
-	int hackData8;
-	int hackData9;
-	zCPolyStrip *m_pPolyStrip;
-	int m_nNumSegments;
-	int m_bActive;
-	float m_nStartVisSeg;
-	float m_nEndVisSeg;
-	int m_nIndex;
-	int hackData16;
-	int m_bIsSubThunder;
-	int m_Sector;
 };
 
 class oCBarrier
@@ -695,8 +727,8 @@ class oCBarrier
 public:
 	zCMesh *skySphereMesh;
 
-	void *myPolyList;
-	void *myVertList;
+	myPoly *myPolyList;
+	myVert *myVertList;
 
 	int numMyVerts;
 	int numMyPolys;
@@ -738,26 +770,28 @@ public:
 
 	zCDecal *thunderStartDecal;
 
-	int bThunder1;
-	int bThunder2;
-	int bThunder3;
-	int bThunder4;
+	int hBarrier_activeThunder_Sector1;
+	int activeThunder_Sector2;
+	int activeThunder_Sector3;
+	int activeThunder_Sector4;
 
 	zVEC2 *originalTexUVList;
 
 public:
 	void Init() { XCALL(0x006B9440); }
+	void AddTremor(zTRenderContext &) { XCALL(0x006B9CE0); }
 	int RenderLayer(zTRenderContext &, int, int *) { XCALL(0x006B9CF0); }
 	int Render(zTRenderContext &, int, int) { XCALL(0x006B9F30); }
 	void RemoveThunder(myThunder *) { XCALL(0x006BA9F0); }
 	int AddThunder(int, int, float, int) { XCALL(0x006BADE0); }
+	int RenderThunder(myThunder *, zTRenderContext &) { XCALL(0x006BB4B0) }
 };
 
 class zCRnd_D3D
 {
 public:
 	void FlushPolys() { XCALL(0x0064DD10); }
-	void SetZBufferWriteEnabled(int zBufferWriteEnabled) { XCALL(0x006524E0); }
+	void SetZBufferWriteEnabled(int) { XCALL(0x006524E0); }
 	int GetZBufferWriteEnabled() { XCALL(0x00652520); }
 };
 
@@ -921,13 +955,13 @@ public:
 	zCBspLeaf *actLeafPtr;
 
 	zCBspBase *bspRoot;
-	zCMesh *m_pMesh;
-	zCPolygon **m_ppTreePolyList;
+	zCMesh *mesh;
+	zCPolygon **treePolyList;
 	zCBspNode *nodeList;
-	zCBspLeaf *m_pLeafList;
+	zCBspLeaf *leafList;
 	int numNodes;
-	int m_nLeafSize;
-	int m_nNumPolys;
+	int numLeafs;
+	int numPolys;
 
 	zCArray<zCVob *> renderVobList;
 	zCArray<zCVobLight *> renderLightList;
@@ -936,8 +970,8 @@ public:
 
 	int bspTreeMode;
 	int worldRenderMode;
-	float vobFarClipZ;
 
+	float vobFarClipZ;
 	zTPlane vobFarPlane;
 	int vobFarPlaneSignbits;
 	int drawVobBBox3D;
@@ -952,20 +986,18 @@ public:
 class zCVobBBox3DSorter
 {
 public:
-	void *_vftable;
 	zCArray<zTBoxSortHandle *> handles;
 	zCArraySort<zTNode *> nodeList[3];
 	int sorted;
+
+public:
+	virtual void *vector_deleting_destructor(unsigned int) { XCALL(0x0083A624); }
 };
 
 class zCWorld : public zCObject
 {
 public:
-	zCTree *parent;
-	zCTree *firstChild;
-	zCTree *next;
-	zCTree *prev;
-	zCVob *data;
+	zCTree<zCVob> globalVobTree;
 
 	zTTraceRayReport traceRayReport;
 
@@ -1096,7 +1128,7 @@ public:
 class zCInputCallback
 {
 public:
-	void *_vftable;
+	virtual int HandleEvent(int) { XCALL(0x0043D4E0); }
 };
 
 class zCBspBase
@@ -1153,7 +1185,7 @@ struct TNpcAIState
 	int phase;
 	int valid;
 	zSTRING name;
-	float stageTime;
+	float stateTime;
 	int prgIndex;
 	int isRtnState;
 };
@@ -1173,10 +1205,7 @@ struct TNpcSlot
 
 	oCVob *vob;
 
-	struct
-	{
-		int wasVobTreeWhenInserted : 1;
-	};
+	int wasVobTreeWhenInserted : 1;
 };
 
 class oCVob : public zCVob
@@ -1208,7 +1237,9 @@ public:
 	oCVisualFX *warningFX;
 	oCVisualFX *shootFX;
 	oCNpc *npc;
-	unsigned char statusBit;
+
+	unsigned char isWarning : 1;
+	unsigned char isShooting : 1;
 
 public:
 	void DoCheck() { XCALL(0x00473740); }
@@ -1228,8 +1259,6 @@ public:
 class oCNpc_States
 {
 public:
-	void *_vftable;
-
 	zSTRING name;
 
 	oCNpc *npc;
@@ -1256,6 +1285,9 @@ public:
 	oCItem *parItem;
 
 	int rtnChangeCount;
+
+public:
+	virtual void Archive(zCArchiver &) { XCALL(0x0076EE70); }
 };
 
 class oCItemContainer : public zCInputCallback
@@ -1318,48 +1350,49 @@ public:
 class oCNewsMemory
 {
 public:
-	void *_vftable;
-
 	zCList<oCNews> iknow;
+
+public:
+	virtual void Archive(zCArchiver &) { XCALL(0x0072A140); }
 };
 
 class oCNpc : public oCVob
 {
 public:
-	int m_nID;
-	zSTRING m_sNameNpc[5];
-	zSTRING m_sSlot;
-	zSTRING m_sEffect;
+	int idx;
+	zSTRING name[5];
+	zSTRING slot;
+	zSTRING effect;
 
-	int m_NpcType;
-	int m_dwFlags;
-	int m_nAttribute[8];
-	int m_nHitChance[5];
-	int m_nProtection[8];
-	int m_nDamages[8];
-	int m_nDamageTypes;
-	int m_nGuild;
-	int m_nLevel;
-	int m_pfnMission[5];
-	int m_nFightTactic;
+	int npcType;
+	int variousFlags;
+	int attribute[8];
+	int hitChance[5];
+	int protection[8];
+	int damage[8];
+	int damagetype;
+	int guild;
+	int level;
+	int mission[5];
+	int fighttactic;
 	int fmode;
-	int m_nVoice;
-	int m_nVoicePitch;
-	int m_nBodymass;
-	int m_pfnDailyRoutine;
-	int m_pfnStartAiState;
-	zSTRING m_sRespawnPoint;
-	int m_nRespawnTime;
-	int m_nSenses;
-	int m_nSensesRange;
-	int m_nAivar[100];
-	zSTRING m_sWp;
-	int m_nExpPoints;
-	int m_nExpNext;
-	int m_nLearnPoints;
+	int voice;
+	int voicePitch;
+	int mass;
+	int daily_routine;
+	int startAIState;
+	zSTRING spawnPoint;
+	int spawnDelay;
+	int senses;
+	int senses_range;
+	int aiscriptvars[100];
+	zSTRING wpname;
+	int experience_points;
+	int experience_points_next_level;
+	int learn_points;
 	int bodyStateInterruptableOverride;
-	int m_bNoFocus;
-	int *m_pAIVAR;
+	int noFocus;
+	int parserEnd;
 
 	int bloodEnabled;
 	int bloodDistance;
@@ -1383,9 +1416,12 @@ public:
 	zVEC3 posFlee;
 	zCWaypoint *waypointFlee;
 	oTRobustTrace rbt;
+
 	zCList<oCNpcTimedOverlay> timedOverlays;
 	zCArray<oCNpcTalent *> talents;
+
 	int spellMana;
+
 	oCMagFrontier magFrontier;
 	oCNpc_States state;
 	oCNpcInventory inventory2;
@@ -1393,41 +1429,39 @@ public:
 	oCNpc *tradeNpc;
 
 	float rangeToPlayer;
+
 	zCArray<zTSoundHandle> listOfVoiceHandles;
 	int voiceIndex;
 	zCArray<oCVisualFX *> effectList;
 
-	struct
-	{
-		int showaidebug : 1;
-		int showNews : 1;
-		int csAllowedAsRole : 1;
+	int showaidebug : 1;
+	int showNews : 1;
+	int csAllowedAsRole : 1;
 
-		int isSummoned : 1;
-		int respawnOn : 1;
-		int movlock : 1;
-		int drunk : 1;
-		int mad : 1;
-		int overlay_wounded : 1;
-		int inOnDamage : 1;
-		int autoremoveweapon : 1;
-		int openinventory : 1;
-		int askroutine : 1;
-		int spawnInRange : 1;
+	int isSummoned : 1;
+	int respawnOn : 1;
+	int movlock : 1;
+	int drunk : 1;
+	int mad : 1;
+	int overlay_wounded : 1;
+	int inOnDamage : 1;
+	int autoremoveweapon : 1;
+	int openinventory : 1;
+	int askroutine : 1;
+	int spawnInRange : 1;
 
-		int body_TexVarNr : 16;
-		int body_TexColorNr : 16;
-		int head_TexVarNr : 16;
-		int teeth_TexVarNr : 16;
-		int guildTrue : 8;
-		int drunk_heal : 8;
-		int mad_heal : 8;
-		int spells : 8;
-		int bodyState : 19;
-		int m_bAniMessageRunning : 1;
-	};
+	int body_TexVarNr : 16;
+	int body_TexColorNr : 16;
+	int head_TexVarNr : 16;
+	int teeth_TexVarNr : 16;
+	int guildTrue : 8;
+	int drunk_heal : 8;
+	int mad_heal : 8;
+	int spells : 8;
+	int bodyState : 19;
+	int m_bAniMessageRunning : 1;
 
-	int instance;
+	int instanz;
 
 	zSTRING mds_name;
 	zSTRING body_visualName;
@@ -1524,6 +1558,7 @@ public:
 
 public:
 	zCClassDef *_GetClassDef() { XCALL(0x0072E370); }
+	void CreateVobList(float) { XCALL(0x0075DA40); }
 };
 
 class oCMOB : public oCVob
@@ -1539,4 +1574,10 @@ public:
 
 public:
 	int IsOccupied() { XCALL(0x00718CC0); }
+};
+
+class oCVisualFX : public zCObject
+{
+public:
+	static oCVisualFX *__cdecl CreateAndPlay(zSTRING &, zCVob *, zCVob *, int, float, int, int) { XCALL(0x0048E760); }
 };

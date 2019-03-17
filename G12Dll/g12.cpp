@@ -10,8 +10,7 @@
 
 FILE *conin, *conout;
 
-void
-PatchGothic(void)
+void PatchGothic(void)
 {
 	if (G12GetPrivateProfileInt("BarrierIgnoreSkyEffectsSetting", 0))
 	{
@@ -26,8 +25,7 @@ PatchGothic(void)
 	}
 }
 
-void
-PatchSpacer(void)
+void PatchSpacer(void)
 {
 	if (G12GetPrivateProfileInt("SpacerDisableNumlock", 0))
 	{
@@ -43,8 +41,7 @@ PatchSpacer(void)
 	}
 }
 
-void
-PatchGothic2(void)
+void PatchGothic2(void)
 {
 	if (G12GetPrivateProfileInt("ShowTime", 0))
 	{
@@ -59,8 +56,7 @@ PatchGothic2(void)
 	}
 }
 
-void
-PatchSpacer2(void)
+void PatchSpacer2(void)
 {
 	if (G12GetPrivateProfileInt("SpacerDisableNumlock", 0))
 	{
@@ -70,8 +66,7 @@ PatchSpacer2(void)
 	}
 }
 
-void
-Init(void)
+void Init(void)
 {
 	if (G12GetPrivateProfileInt("AllocConsole", 0))
 	{
@@ -99,8 +94,7 @@ Init(void)
 	}
 }
 
-BOOL WINAPI
-DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
+BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 {
 	if (reason == DLL_PROCESS_ATTACH)
 	{

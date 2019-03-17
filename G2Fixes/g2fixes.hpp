@@ -1,5 +1,5 @@
 class hNpc : public oCNpc
 {
 public:
-	void CreateVobList(float);
+	void CreateVobList(float max_dist);
 };
