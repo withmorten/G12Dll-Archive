@@ -802,7 +802,7 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 			rndContext.world = zCCamera::activeCam->connectedVob->homeWorld;
 			rndContext.vob = zCCamera::activeCam->connectedVob;
 
-			// Save values
+			// Save thunder
 			myThunder *myThunderList;
 			int numMyThunders;
 
@@ -835,7 +835,7 @@ void PatchBarrier(void)
 		alwaysVisible = G12GetPrivateProfileInt("BarrierAlwaysOn", 0);
 		ignoreSkyEffectsSetting = G12GetPrivateProfileInt("BarrierIgnoreSkyEffectsSetting", 0);
 
-		timeToStayVisible = (float)(G12GetPrivateProfileInt("BarrierTimeOn", 250) * 1000);
+		timeToStayVisible = (float)(G12GetPrivateProfileInt("BarrierTimeOn", 25) * 1000);
 
 		timeToStayHidden = (float)(G12GetPrivateProfileInt("BarrierTimeOff", 1200) * 1000);
 
