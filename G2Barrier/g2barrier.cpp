@@ -223,7 +223,7 @@ void PatchMagicFrontier(void)
 
 	if (G12GetPrivateProfileInt("MagicFrontierPointsWorldGRM", 0))
 	{
-		// GRM fixes has some different points ... just included here for now
+		// GRMFixes has some different points ... just included here for now
 		MagicFrontierNewPointListInitGRM();
 	}
 }
@@ -313,10 +313,16 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 		zCCamera::activeCam->SetFarClipZ(2000000.0f);
 		rndContext.cam->SetTransform(1, rndContext.cam->connectedVob->trafoObjToWorld.InverseLinTrafo());
 
-		if (fadeInOut)
-		{
-			this->bFadeInOut = 1;
+		nextActivation -= ztimer.frameTimeFloat;
 
+		if (nextActivation < 0)
+		{
+			nextActivation = timeToStayHidden + ((_rand() / RAND_MAX) * 5.0f * 60.0f * 1000.0f);
+			this->bFadeInOut = 1;
+		}
+
+		if (this->bFadeInOut)
+		{
 			if (this->fadeIn)
 			{
 				if (!alwaysVisible)
@@ -367,11 +373,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 						this->fadeState = 0;
 						this->fadeIn = 1;
 						this->fadeOut = 0;
-
-						if (!alwaysVisible)
-						{
-							this->bFadeInOut = 0;
-						}
+						this->bFadeInOut = 0;
 
 						if (earthQuakeEnable)
 						{
@@ -748,6 +750,8 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 		::sfx4 = NULL;
 		::sfxHandle4 = 0;
 
+		barrier->bFadeInOut = 1;
+
 		zsky = this;
 		barrier->Init();
 
@@ -786,43 +790,29 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 	if ((zCSkyControler::s_skyEffectsEnabled || ignoreSkyEffectsSetting)
 		&& !_stricmp(ogame->GetGameWorld()->worldName._Ptr, worldName))
 	{
-		nextActivation -= ztimer.frameTimeFloat;
+		memset(&rndContext, 0x00, sizeof(zTRenderContext));
+		rndContext.clipFlags = -1;
+		rndContext.cam = zCCamera::activeCam;
+		rndContext.world = zCCamera::activeCam->connectedVob->homeWorld;
+		rndContext.vob = zCCamera::activeCam->connectedVob;
 
-		if (nextActivation < 0)
-		{
-			nextActivation = timeToStayHidden + ((_rand() / RAND_MAX) * 5.0f * 60.0f * 1000.0f);
-			this->bFadeInOut = 1;
-		}
+		// Save thunder
+		myThunder *myThunderList;
+		int numMyThunders;
 
-		if (this->bFadeInOut)
-		{
-			memset(&rndContext, 0x00, sizeof(zTRenderContext));
-			rndContext.clipFlags = -1;
-			rndContext.cam = zCCamera::activeCam;
-			rndContext.world = zCCamera::activeCam->connectedVob->homeWorld;
-			rndContext.vob = zCCamera::activeCam->connectedVob;
+		// Instead of rewriting AddThunder, AddThunderSub and RemoveThunder just swap whichever thunder is supposed to be worked on
+		myThunderList = barrier->myThunderList;
+		numMyThunders = barrier->numMyThunders;
 
-			// Save thunder
-			myThunder *myThunderList;
-			int numMyThunders;
+		barrier->myThunderList = ::myThunderList;
+		barrier->numMyThunders = ::numMyThunders;
 
-			// Instead of rewriting AddThunder, AddThunderSub and RemoveThunder just swap whichever thunder is supposed to be worked on
-			myThunderList = barrier->myThunderList;
-			numMyThunders = barrier->numMyThunders;
+		isBarrierRender = 1;
 
-			barrier->myThunderList = ::myThunderList;
-			barrier->numMyThunders = ::numMyThunders;
+		barrier->Render(rndContext, this->bFadeInOut, alwaysVisible);
 
-			isBarrierRender = 1;
-
-			if (!barrier->Render(rndContext, this->bFadeInOut, alwaysVisible))
-			{
-				this->bFadeInOut = 0;
-			}
-
-			barrier->myThunderList = myThunderList;
-			barrier->numMyThunders = numMyThunders;
-		}
+		barrier->myThunderList = myThunderList;
+		barrier->numMyThunders = numMyThunders;
 	}
 }
 
