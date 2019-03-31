@@ -4,11 +4,9 @@
 #include <stdint.h>
 #include "MemoryMgr.h"
 
-#define G12INI_SECTION "G12"
+#define G12DLL_NAME "G12"
 
 #include "G12.h"
-
-FILE *conin, *conout;
 
 void PatchGothic(void)
 {
@@ -68,28 +66,24 @@ void PatchSpacer2(void)
 
 void Init(void)
 {
-	if (G12GetPrivateProfileInt("AllocConsole", 0))
+	if (GOTHIC1)
 	{
-		AllocConsole();
-		freopen_s(&conin, "conin$", "r", stdin);
-		freopen_s(&conout, "conout$", "w", stdout);
-		freopen_s(&conout, "conout$", "w", stderr);
-	}
-
-	if (*(int *)0x004F3E10 == 0x5618EC83) // GothicMod.exe
-	{
+		G12AllocConsole();
 		PatchGothic();
 	}
-	else if (*(int *)0x00836A52 == 0x102474FF) // spacer.exe
+	else if (SPACER1)
 	{
+		G12AllocConsole();
 		PatchSpacer();
 	}
-	else if (*(int *)0x00502D70 == 0x5614EC83) // Gothic2.exe
+	else if (GOTHIC2)
 	{
+		G12AllocConsole();
 		PatchGothic2();
 	}
-	else if (*(int *)0x008523A2 == 0x102474FF) // Spacer2.exe
+	else if (SPACER2)
 	{
+		G12AllocConsole();
 		PatchSpacer2();
 	}
 }

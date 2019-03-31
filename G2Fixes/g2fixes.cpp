@@ -4,15 +4,13 @@
 #include <stdint.h>
 #include "..\G12Dll\MemoryMgr.h"
 
-#define G12INI_SECTION "G2Fixes"
+#define G12DLL_NAME "G2Fixes"
 
 #include "..\G12Dll\G12.h"
 
 #include "..\G12Dll\G2.hpp"
 #include "..\G12Dll\G2.h"
 #include "g2fixes.hpp"
-
-FILE *conin, *conout;
 
 void hNpc::CreateVobList(float max_dist)
 {
@@ -22,25 +20,13 @@ void hNpc::CreateVobList(float max_dist)
 	zVEC3 trafo_vec;
 	zTBBox3D bbox;
 	zCClassDef *classDef;
+	int i;
 
 	int delete_vob;
-	int x;
 
 	if (this->homeWorld)
 	{
-		for (x = 0; x < this->vobList.numInArray; x++)
-		{
-			vob = this->vobList.array[x];
-
-			if (vob)
-			{
-				vob->Release();
-
-				this->vobList.array[x] = NULL;
-			}
-		}
-
-		this->vobList.DeleteList();
+		this->ClearVobList();
 
 		this->trafoObjToWorld.GetTranslation(trafo_vec);
 
@@ -54,63 +40,45 @@ void hNpc::CreateVobList(float max_dist)
 
 		this->homeWorld->bspTree.bspRoot->CollectVobsInBBox3D(this->vobList, bbox);
 
-		for (x = 0; x < this->vobList.numInArray; x++)
+		for (i = 0; i < this->vobList.numInArray; i++)
 		{
 			delete_vob = 0;
 
-			vob = this->vobList.array[x];
+			vob = this->vobList.array[i];
+			classDef = vob->_GetClassDef();
 
-			if (vob)
+			if (vob == this)
 			{
-				if (vob == this)
+				delete_vob = 1;
+			}
+
+			if (zCObject::CheckInheritance(&oCMobInter::classDef, classDef))
+			{
+				mob = (oCMobInter *)vob;
+
+				if (mob->IsOccupied())
 				{
 					delete_vob = 1;
 				}
-				else
+			}
+
+			if (zCObject::CheckInheritance(&oCNpc::classDef, classDef))
+			{
+				npc = (oCNpc *)vob;
+
+				if (npc->attribute[0] <= 0 && npc->inventory2.IsEmpty(1, 1))
 				{
-					classDef = vob->_GetClassDef();
-
-					while (classDef)
-					{
-						if (classDef == (zCClassDef *)0x00AB19A0) // oCMobInter::classDef
-						{
-							mob = (oCMobInter *)vob;
-
-							if (mob->IsOccupied())
-							{
-								delete_vob = 1;
-							}
-
-							break;
-						}
-						else if (classDef == (zCClassDef *)0x00AB1E20) // oCNpc::classDef
-						{
-							npc = (oCNpc *)vob;
-
-							if (npc->attribute[0] <= 0 && npc->inventory2.IsEmpty(1, 1))
-							{
-								delete_vob = 1;
-							}
-
-							break;
-						}
-						else
-						{
-							classDef = classDef->baseClassDef;
-						}
-					}
+					delete_vob = 1;
 				}
+			}
 
-				if (delete_vob)
-				{
-					this->vobList.Remove(this->vobList.array[x]);
-
-					x--;
-				}
-				else
-				{
-					vob->refCtr++;
-				}
+			if (delete_vob)
+			{
+				this->vobList.RemoveIndex(i--);
+			}
+			else
+			{
+				vob->refCtr++;
 			}
 		}
 	}
@@ -118,10 +86,46 @@ void hNpc::CreateVobList(float max_dist)
 
 void PatchFocus(void)
 {
-	InjectHook(0x0073369B, &hNpc::CreateVobList, PATCH_CALL);
-	InjectHook(0x00733BE9, &hNpc::CreateVobList, PATCH_CALL);
-	InjectHook(0x0075DC54, &hNpc::CreateVobList, PATCH_CALL);
-	InjectHook(0x0075DE95, &hNpc::CreateVobList, PATCH_CALL);
+	InjectHook(0x0073369B, &hNpc::CreateVobList); // oCNpc::ToggleFocusVob()
+	InjectHook(0x00733BE9, &hNpc::CreateVobList); // oCNpc::CollectFocusVob()
+	InjectHook(0x0075DC54, &hNpc::CreateVobList); // oCNpc::PerceiveAll()
+	InjectHook(0x0075DE95, &hNpc::CreateVobList); // oCNpc::PerceptionCheck()
+}
+
+static zVEC3 defaultCol0;
+static zVEC3 defaultCol1;
+static zVEC3 defaultCol2;
+static zVEC3 defaultCol3;
+
+void hSkyControler_Outdoor::ReadFogColorsFromINI()
+{
+	this->zCSkyControler_Outdoor::ReadFogColorsFromINI();
+
+	this->fogColorDayVariations.array[0] = defaultCol0;
+	this->fogColorDayVariations.array[1] = defaultCol1;
+	this->fogColorDayVariations.array[2] = defaultCol2;
+	this->fogColorDayVariations.array[3] = defaultCol3;
+}
+
+void PatchFogColors(void)
+{
+	defaultCol0.n[0] = 116;
+	defaultCol0.n[1] = 89;
+	defaultCol0.n[2] = 75;
+
+	defaultCol1.n[0] = 80;
+	defaultCol1.n[1] = 90;
+	defaultCol1.n[2] = 80;
+
+	defaultCol2.n[0] = 120;
+	defaultCol2.n[1] = 140;
+	defaultCol2.n[2] = 180;
+
+	defaultCol3.n[0] = 120;
+	defaultCol3.n[1] = 140;
+	defaultCol3.n[2] = 180;
+
+	InjectHook(0x005E6443, &hSkyControler_Outdoor::ReadFogColorsFromINI); // zCSkyControler_Outdoor::zCSkyControler_Outdoor()
 }
 
 const char *Gothic1AppName = "Gothic - 2.6 (fix)";
@@ -142,6 +146,15 @@ void PatchGothic2(void)
 		// No GAMESTART menu "music"
 		Patch(0x004DB7EE + 1, NoSound);
 		Patch(0x004DB815 + 1, NoSound);
+
+		// Fix progress bar on Loading Screen
+		Patch(0x006C282B + 1, 6600);
+		Patch(0x006C2830 + 1, 6192);
+		Patch(0x006C2835 + 1, 6100);
+		Patch(0x006C283A + 1, 2000);
+
+		// Patch fogcolors to Gothic 1 fogcolors (perhaps change this so it only happens on WORLD, and gets done dynamically on levelchange?)
+		PatchFogColors();
 	}
 
 	if (G12GetPrivateProfileInt("NoGamestartMusic", 0))
@@ -153,22 +166,17 @@ void PatchGothic2(void)
 
 	if (G12GetPrivateProfileInt("HideFocus", 0))
 	{
+		// Unlike HideFocus from Systempack which is sometimes buggy and where vobs can still be focused when turning around quickly and spamming ctrl
+		// this patches CreateVobList() to the Sequel variant where a dead, empty NPC does not even end up in the focusable voblist
 		PatchFocus();
 	}
 }
 
 void Init(void)
 {
-	if (G12GetPrivateProfileInt("AllocConsole", 0))
+	if (GOTHIC2)
 	{
-		AllocConsole();
-		freopen_s(&conin, "conin$", "r", stdin);
-		freopen_s(&conout, "conout$", "w", stdout);
-		freopen_s(&conout, "conout$", "w", stderr);
-	}
-
-	if (*(int *)0x00502D70 == 0x5614EC83) // Gothic2.exe
-	{
+		G12AllocConsole();
 		PatchGothic2();
 	}
 }

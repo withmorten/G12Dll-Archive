@@ -1,3 +1,8 @@
+#define GOTHIC1 (*(int *)0x004F3E10 == 0x5618EC83) // GothicMod.exe
+#define SPACER1 (*(int *)0x00836A52 == 0x102474FF) // spacer.exe
+#define GOTHIC2 (*(int *)0x00502D70 == 0x5614EC83) // Gothic2.exe
+#define SPACER2 (*(int *)0x008523A2 == 0x102474FF) // Spacer2.exe
+
 #define G12INI_PATH1 ".\\G12.ini"
 #define G12INI_PATH2 ".\\System\\G12.ini"
 
@@ -9,10 +14,10 @@ UINT G12GetPrivateProfileInt(LPCTSTR lpKeyName, INT nDefault)
 	{
 		fclose(f);
 
-		return GetPrivateProfileInt(G12INI_SECTION, lpKeyName, nDefault, G12INI_PATH1);
+		return GetPrivateProfileInt(G12DLL_NAME, lpKeyName, nDefault, G12INI_PATH1);
 	}
 
-	return GetPrivateProfileInt(G12INI_SECTION, lpKeyName, nDefault, G12INI_PATH2);
+	return GetPrivateProfileInt(G12DLL_NAME, lpKeyName, nDefault, G12INI_PATH2);
 }
 
 DWORD G12GetPrivateProfileString(LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lpReturnedString, DWORD nSize)
@@ -23,8 +28,21 @@ DWORD G12GetPrivateProfileString(LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lp
 	{
 		fclose(f);
 
-		return GetPrivateProfileString(G12INI_SECTION, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH1);
+		return GetPrivateProfileString(G12DLL_NAME, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH1);
 	}
 
-	return GetPrivateProfileString(G12INI_SECTION, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH2);
+	return GetPrivateProfileString(G12DLL_NAME, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH2);
+}
+
+FILE *conin, *conout;
+
+void G12AllocConsole(void)
+{
+	if (G12GetPrivateProfileInt("AllocConsole", 0))
+	{
+		AllocConsole();
+		freopen_s(&conin, "conin$", "r", stdin);
+		freopen_s(&conout, "conout$", "w", stdout);
+		freopen_s(&conout, "conout$", "w", stderr);
+	}
 }

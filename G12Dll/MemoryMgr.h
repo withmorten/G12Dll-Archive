@@ -32,11 +32,20 @@ Patch(AT address, T value)
 }
 
 inline void
-PatchBytes(DWORD address, void* value, size_t nCount)
+PatchBytes(DWORD address, void *value, size_t nCount)
 {
 	DWORD		dwProtect[2];
 	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 	memcpy((void*)address, value, nCount);
+	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
+}
+
+inline void
+ReadBytes(DWORD address, void *out, size_t nCount)
+{
+	DWORD		dwProtect[2];
+	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+	memcpy(out, (void*)address, nCount);
 	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
 }
 
@@ -54,6 +63,7 @@ enum
 	PATCH_CALL,
 	PATCH_JUMP,
 	PATCH_NOTHING,
+	HOOK_SIZE = 5,
 };
 
 template<typename AT, typename HT> inline void
@@ -63,15 +73,15 @@ InjectHook(AT address, HT hook, unsigned int nType=PATCH_NOTHING)
 	switch ( nType )
 	{
 	case PATCH_JUMP:
-		VirtualProtect((void*)address, 5, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+		VirtualProtect((void*)address, HOOK_SIZE, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 		*(BYTE*)address = 0xE9;
 		break;
 	case PATCH_CALL:
-		VirtualProtect((void*)address, 5, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+		VirtualProtect((void*)address, HOOK_SIZE, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 		*(BYTE*)address = 0xE8;
 		break;
 	default:
-		VirtualProtect((void*)((DWORD)address + 1), 4, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+		VirtualProtect((void*)((DWORD)address + 1), HOOK_SIZE - 1, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 		break;
 	}
 	DWORD		dwHook;
@@ -81,24 +91,26 @@ InjectHook(AT address, HT hook, unsigned int nType=PATCH_NOTHING)
 		mov		dwHook, eax
 	}
 
-	*(ptrdiff_t*)((DWORD)address + 1) = (DWORD)dwHook - (DWORD)address - 5;
+	*(ptrdiff_t*)((DWORD)address + 1) = (DWORD)dwHook - (DWORD)address - HOOK_SIZE;
 
 	if ( nType == PATCH_NOTHING )
-		VirtualProtect((void*)((DWORD)address + 1), 4, dwProtect[0], &dwProtect[1]);
+		VirtualProtect((void*)((DWORD)address + 1), HOOK_SIZE - 1, dwProtect[0], &dwProtect[1]);
 	else
-		VirtualProtect((void*)address, 5, dwProtect[0], &dwProtect[1]);
+		VirtualProtect((void*)address, HOOK_SIZE, dwProtect[0], &dwProtect[1]);
 }
 
 inline void ExtractCall(void *dst, addr a)
 {
 	*(addr*)dst = (addr)(*(addr*)(a+1) + a + 5);
 }
+
 template<typename T>
 inline void InterceptCall(void *dst, T func, addr a)
 {
 	ExtractCall(dst, a);
 	InjectHook(a, func);
 }
+
 template<typename T>
 inline void InterceptVmethod(void *dst, T func, addr a)
 {
