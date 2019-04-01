@@ -49,10 +49,20 @@ ReadBytes(DWORD address, void *out, size_t nCount)
 	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
 }
 
-template<typename AT> inline void
-Nop(AT address, unsigned int nCount)
+inline void
+Nop(unsigned int address, unsigned int nCount = 1)
 {
 	DWORD		dwProtect[2];
+	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+	memset((void*)address, 0x90, nCount);
+	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
+}
+
+inline void
+NopTo(unsigned int address, unsigned int to)
+{
+	DWORD		dwProtect[2];
+	unsigned int nCount = to - address;
 	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 	memset((void*)address, 0x90, nCount);
 	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);

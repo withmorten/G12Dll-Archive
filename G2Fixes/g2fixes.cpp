@@ -117,7 +117,7 @@ void hSkyControler_Outdoor::ReadFogColorsFromINI()
 
 ASM(zCSkyControler_Mid_Hook)
 {
-	__asm { mov dword ptr[esi + 0x50], 0xFF005078 }
+	__asm { mov dword ptr [esi + 0x50], 0xFF005078 }
 
 	RET(0x005DFC30);
 }
@@ -173,12 +173,71 @@ void PatchGothic2(void)
 	}
 }
 
+void PatchSpacer2(void)
+{
+	if (G12GetPrivateProfileInt("SpacerG1Map", FALSE))
+	{
+		// Only enable this temporarily if you want to open a Gothic 1 uncompiled zen
+
+		// Gothic 1 uncompiled Zens and Material libraries would be compatible in Spacer2 if the following values were read safely
+		// Nopping them results in Spacer2 using the default values instead of overwriting them with garbage
+
+		// Note that the Unarchiver will still complain about many missing entries, but it won't matter anymore
+
+		// zCMaterial::Unarchive()
+		// Some WATER materials will require manual setting of the alphaFunc, as in Gothic 1 it got used differently on WATER
+
+		// detailObjectScale
+		NopTo(0x006F10E5, 0x006F10F7);
+
+		// forceOccluder
+		NopTo(0x006F10F7, 0x006F1112);
+
+		// environmentalMapping
+		NopTo(0x006F1112, 0x006F112D);
+
+		// environmentalMappingStrength
+		NopTo(0x006F112D, 0x006F113C);
+
+		// waveMode
+		NopTo(0x006F113C, 0x006F115A);
+
+		// waveSpeed
+		NopTo(0x006F115A, 0x006F1175);
+
+		// ignoreSunLight
+		NopTo(0x006F1195, 0x006F11B0);
+
+		// alphaFunc
+		NopTo(0x006F11B0, 0x006F11C2);
+		Nop(0x006F11C2);
+		Patch(0x006F11C2 + 1, (BYTE)0xE9);
+		Nop(0x006F127E, 3);
+
+		// zCVob::UnarchiveVerbose()
+
+		// visualAniMode
+		NopTo(0x0078A8A0, 0x0078A8B5);
+
+		// visualAniModeStrength
+		NopTo(0x0078A8B5, 0x0078A8C7);
+
+		// vobFarClipZScale
+		NopTo(0x0078A8C7, 0x0078A8D9);
+	}
+}
+
 void Init(void)
 {
 	if (GOTHIC2)
 	{
 		G12AllocConsole();
 		PatchGothic2();
+	}
+	else if (SPACER2)
+	{
+		G12AllocConsole();
+		PatchSpacer2();
 	}
 }
 
