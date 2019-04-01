@@ -21,16 +21,6 @@ WRAPPER int _rand(void) { EAXJMP(0x007D2F98); }
 
 WRAPPER void GetNearestPointFromLineSegment2D(zVEC2 &a, zVEC2 &b, zVEC2 &c, zVEC2 &nearest) { EAXJMP(0x00474080); }
 
-void zCOLOR::SetAlphaByte(BYTE f)
-{
-	this->alpha = f;
-}
-
-BYTE zCOLOR::GetAlphaByte()
-{
-	return this->alpha;
-}
-
 zVEC3 operator -(zVEC3 &v)
 {
 	zVEC3 n;

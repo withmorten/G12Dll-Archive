@@ -5,7 +5,6 @@
 #include <math.h>
 #include "..\G12Dll\MemoryMgr.h"
 
-
 #define G12DLL_NAME "G2Barrier"
 
 #include "..\G12Dll\G12.h"
@@ -209,7 +208,7 @@ void MagicFrontierNewPointListInitGRM(void)
 
 void PatchMagicFrontier(void)
 {
-	if (G12GetPrivateProfileInt("MagicFrontierEnable", 0))
+	if (G12GetPrivateProfileInt("MagicFrontierEnable", FALSE))
 	{
 		if (!strlen(worldName))
 		{
@@ -221,7 +220,7 @@ void PatchMagicFrontier(void)
 		InjectHook(0x0073E71B, &hMagFrontier::DoCheck); // oCNpc::ProcessNpc()
 	}
 
-	if (G12GetPrivateProfileInt("MagicFrontierPointsWorldGRM", 0))
+	if (G12GetPrivateProfileInt("MagicFrontierPointsWorldGRM", FALSE))
 	{
 		// GRMFixes has some different points ... just included here for now
 		MagicFrontierNewPointListInitGRM();
@@ -231,7 +230,8 @@ void PatchMagicFrontier(void)
 #define BARRIER_ALPHA_MAX 120
 #define BARRIER_COLOR 0x00FFFFFF
 
-static int meshLoaded = 0;
+static int meshLoaded = FALSE;
+static int firstRender = TRUE;
 
 static int isBarrierRender;
 
@@ -261,7 +261,7 @@ static zTSoundHandle sfxHandle4;
 
 static float nextActivation = 8000.0f;
 
-static int showThunders = 0;
+static int showThunders = FALSE;
 static float fadeTime;
 static float timeUpdatedFade = 0.0f;
 static float timeStepToUpdateFade = 1.0f;
@@ -290,7 +290,7 @@ void hBarrier::AddTremor(zTRenderContext &renderContext)
 
 void hBarrier::AddEarthQuake()
 {
-	oCVisualFX *vfx = oCVisualFX::CreateAndPlay(zSTRING("FX_EarthQuake"), oCNpc::player, oCNpc::player, 0, 0, 0, 0);
+	oCVisualFX *vfx = oCVisualFX::CreateAndPlay(zSTRING("FX_EarthQuake"), oCNpc::player, oCNpc::player, 0, 0, 0, FALSE);
 
 	if (vfx)
 	{
@@ -309,7 +309,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 		int zBufferWriteEnabled = zrenderer->GetZBufferWriteEnabled();
 		float farClipZ = zCCamera::activeCam->farClipZ;
 
-		zrenderer->SetZBufferWriteEnabled(0);
+		zrenderer->SetZBufferWriteEnabled(FALSE);
 		zCCamera::activeCam->SetFarClipZ(2000000.0f);
 		rndContext.cam->SetTransform(1, rndContext.cam->connectedVob->trafoObjToWorld.InverseLinTrafo());
 
@@ -318,16 +318,16 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 		if (nextActivation < 0)
 		{
 			nextActivation = timeToStayHidden + ((_rand() / RAND_MAX) * 5.0f * 60.0f * 1000.0f);
-			this->bFadeInOut = 1;
+			this->bFadeInOut = TRUE;
 		}
 
 		if (this->bFadeInOut)
 		{
 			if (this->fadeIn)
 			{
-				if (!alwaysVisible)
+				if (!alwaysVisible || firstRender)
 				{
-					material->color.SetAlphaByte(this->fadeState);
+					material->color.alpha = this->fadeState;
 				}
 
 				if (ztimer.totalTimeFloat - timeUpdatedFade > timeStepToUpdateFade)
@@ -339,9 +339,10 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 
 				if (this->fadeState > BARRIER_ALPHA_MAX)
 				{
+					firstRender = FALSE;
 					this->fadeState = BARRIER_ALPHA_MAX;
-					this->fadeIn = 0;
-					showThunders = 1;
+					this->fadeIn = FALSE;
+					showThunders = TRUE;
 					fadeTime = ztimer.totalTimeFloat;
 				}
 			}
@@ -349,8 +350,8 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 			{
 				if (ztimer.totalTimeFloat - fadeTime > timeToStayVisible)
 				{
-					this->fadeOut = 1;
-					showThunders = 0;
+					this->fadeOut = TRUE;
+					showThunders = FALSE;
 					fadeTime = ztimer.totalTimeFloat;
 				}
 
@@ -358,7 +359,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 				{
 					if (!alwaysVisible)
 					{
-						material->color.SetAlphaByte(this->fadeState);
+						material->color.alpha = this->fadeState;
 					}
 
 					if (ztimer.totalTimeFloat - timeUpdatedFade > timeStepToUpdateFade)
@@ -370,10 +371,10 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 
 					if (this->fadeState < 1)
 					{
-						this->fadeState = 0;
-						this->fadeIn = 1;
-						this->fadeOut = 0;
-						this->bFadeInOut = 0;
+						this->fadeState = FALSE;
+						this->fadeIn = TRUE;
+						this->fadeOut = FALSE;
+						this->bFadeInOut = FALSE;
 
 						if (earthQuakeEnable)
 						{
@@ -392,7 +393,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 			}
 		}
 
-		int addNewThunder = 1;
+		int addNewThunder = TRUE;
 
 		this->RenderLayer(rndContext, 0, addNewThunder);
 		this->RenderLayer(rndContext, 1, addNewThunder);
@@ -408,14 +409,14 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 			sound3DParams.loopType = 0;
 			sound3DParams.coneAngleDeg = 0.0f;
 			sound3DParams.reverbLevel = 1.0f;
-			sound3DParams.isAmbient3D = 0;
+			sound3DParams.isAmbient3D = FALSE;
 			sound3DParams.pitchOffset = -999999.0f;
 
 			if (!::activeThunder_Sector1 && !zsound->IsSoundActive(::sfxHandle1) &&
 				(ztimer.totalTimeFloat - delayTimeSector1) > 8000.f)
 			{
 				this->AddThunder(this->startPointList1[(this->numStartPoints1 - 1) & _rand()], 11, 0, 1);
-				::activeThunder_Sector1 = 1;
+				::activeThunder_Sector1 = TRUE;
 				delayTimeSector1 = ztimer.totalTimeFloat;
 
 				if (!::sfx1)
@@ -435,7 +436,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 				(ztimer.totalTimeFloat - delayTimeSector2) > 6000.f)
 			{
 				this->AddThunder(this->startPointList2[(this->numStartPoints2 - 1) & _rand()], 11, 0, 2);
-				::activeThunder_Sector2 = 1;
+				::activeThunder_Sector2 = TRUE;
 				delayTimeSector2 = ztimer.totalTimeFloat;
 
 				if (!::sfx2)
@@ -455,7 +456,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 				(ztimer.totalTimeFloat - delayTimeSector3) > 14000.f)
 			{
 				this->AddThunder(this->startPointList3[(this->numStartPoints3 - 1) & _rand()], 11, 0, 3);
-				::activeThunder_Sector3 = 1;
+				::activeThunder_Sector3 = TRUE;
 				delayTimeSector3 = ztimer.totalTimeFloat;
 
 				if (!::sfx3)
@@ -475,7 +476,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 				(ztimer.totalTimeFloat - delayTimeSector4) > 2000.f)
 			{
 				this->AddThunder(this->startPointList4[(this->numStartPoints4 - 1) & _rand()], 11, 0, 4);
-				::activeThunder_Sector4 = 1;
+				::activeThunder_Sector4 = TRUE;
 				delayTimeSector4 = ztimer.totalTimeFloat;
 
 				if (!::sfx4)
@@ -493,7 +494,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 
 			for (int x = 0; x < this->numMyThunders; x++)
 			{
-				this->oCBarrier::RenderThunder(&this->myThunderList[x], rndContext);
+				this->RenderThunder(&this->myThunderList[x], rndContext);
 			}
 
 			zrenderer->FlushPolys();
@@ -586,28 +587,28 @@ int hBarrier::RenderThunder(myThunder *thunder, zTRenderContext &rndContext)
 			{
 				if (thunder->sector == 1)
 				{
-					::activeThunder_Sector1 = 0;
+					::activeThunder_Sector1 = FALSE;
 				}
 				if (thunder->sector == 2)
 				{
-					::activeThunder_Sector2 = 0;
+					::activeThunder_Sector2 = FALSE;
 				}
 				if (thunder->sector == 3)
 				{
-					::activeThunder_Sector3 = 0;
+					::activeThunder_Sector3 = FALSE;
 				}
 				if (thunder->sector == 4)
 				{
-					::activeThunder_Sector4 = 0;
+					::activeThunder_Sector4 = FALSE;
 				}
 
 				this->numMyThunders--;
 			}
 
 			this->RemoveThunder(thunder);
-			thunder->valid = 0;
+			thunder->valid = FALSE;
 
-			return 0;
+			return FALSE;
 		}
 
 		if (thunder->t0 != thunder->t1)
@@ -654,10 +655,10 @@ int hBarrier::RenderThunder(myThunder *thunder, zTRenderContext &rndContext)
 			rndContext.cam->SetTransform(0, matTemp2);
 		}
 
-		return 1;
+		return TRUE;
 	}
 
-	return 0;
+	return FALSE;
 }
 
 void hBarrier_Init(void)
@@ -669,7 +670,7 @@ void hBarrier_Init(void)
 
 	material->SetTexture(zSTRING("BARRIERE.TGA"));
 	material->rndAlphaBlendFunc = zRND_ALPHA_FUNC_ADD;
-	material->color.SetAlphaByte(barrier->fadeState);
+	material->color.alpha = barrier->fadeState;
 
 	float maxHeight = skySphereMesh->bbox3D.maxs.n[1];
 	float minHeight = maxHeight * 0.925f;
@@ -705,10 +706,10 @@ void hBarrier_Init(void)
 			}
 
 			feat->lightDyn.dword = BARRIER_COLOR;
-			feat->lightDyn.SetAlphaByte(alpha);
+			feat->lightDyn.alpha = alpha;
 
 			feat->lightStat.dword = BARRIER_COLOR;
-			feat->lightStat.SetAlphaByte(alpha);
+			feat->lightStat.alpha = alpha;
 		}
 	}
 }
@@ -722,8 +723,9 @@ ASM(oCBarrier_Init_Hook)
 		popad
 		mov eax, [eax + 0x34]
 		lea ebx, [eax + eax * 2]
-		RET(0x006B94FF)
 	}
+
+	RET(0x006B94FF)
 }
 
 void hSkyControler_Barrier::RenderSkyPre(void)
@@ -734,12 +736,12 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 
 	if (!meshLoaded)
 	{
-		meshLoaded = 1;
+		meshLoaded = TRUE;
 
-		::activeThunder_Sector1 = 0;
-		::activeThunder_Sector2 = 0;
-		::activeThunder_Sector3 = 0;
-		::activeThunder_Sector4 = 0;
+		::activeThunder_Sector1 = FALSE;
+		::activeThunder_Sector2 = FALSE;
+		::activeThunder_Sector3 = FALSE;
+		::activeThunder_Sector4 = FALSE;
 
 		::sfx1 = NULL;
 		::sfxHandle1 = 0;
@@ -750,7 +752,7 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 		::sfx4 = NULL;
 		::sfxHandle4 = 0;
 
-		barrier->bFadeInOut = 1;
+		barrier->bFadeInOut = TRUE;
 
 		zsky = this;
 		barrier->Init();
@@ -760,11 +762,6 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 		::myThunderList = ::thunderList;
 		::numMyThunders = 20;
 		memcpy(::myThunderList, barrier->myThunderList, sizeof(myThunder) * 20);
-
-		if (alwaysVisible)
-		{
-			barrier->skySphereMesh->polyList[0]->material->color.SetAlphaByte(BARRIER_ALPHA_MAX);
-		}
 	}
 
 	zTRenderContext rndContext;
@@ -781,7 +778,7 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 			rndContext.world = zCCamera::activeCam->connectedVob->homeWorld;
 			rndContext.vob = zCCamera::activeCam->connectedVob;
 
-			isBarrierRender = 0;
+			isBarrierRender = FALSE;
 
 			barrier->oCBarrier::Render(rndContext, 0, 0);
 		}
@@ -807,7 +804,7 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 		barrier->myThunderList = ::myThunderList;
 		barrier->numMyThunders = ::numMyThunders;
 
-		isBarrierRender = 1;
+		isBarrierRender = TRUE;
 
 		barrier->Render(rndContext, this->bFadeInOut, alwaysVisible);
 
@@ -818,22 +815,22 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 
 void PatchBarrier(void)
 {
-	if (G12GetPrivateProfileInt("BarrierEnable", 0))
+	if (G12GetPrivateProfileInt("BarrierEnable", FALSE))
 	{
 		G12GetPrivateProfileString("WorldName", WORLD_NAME, worldName, MAX_PATH);
 
-		alwaysVisible = G12GetPrivateProfileInt("BarrierAlwaysOn", 0);
-		ignoreSkyEffectsSetting = G12GetPrivateProfileInt("BarrierIgnoreSkyEffectsSetting", 0);
+		alwaysVisible = G12GetPrivateProfileInt("BarrierAlwaysOn", FALSE);
+		ignoreSkyEffectsSetting = G12GetPrivateProfileInt("BarrierIgnoreSkyEffectsSetting", FALSE);
 
 		timeToStayVisible = (float)(G12GetPrivateProfileInt("BarrierTimeOn", 25) * 1000);
 
 		timeToStayHidden = (float)(G12GetPrivateProfileInt("BarrierTimeOff", 1200) * 1000);
 
 		// looks bad when walking, should probably not be enabled at all, creates a small tremor each barrier thunder
-		tremorEnable = G12GetPrivateProfileInt("BarrierTremorEnable", 0);
+		tremorEnable = G12GetPrivateProfileInt("BarrierTremorEnable", FALSE);
 
 		// creates an earthQuake (eines dieser Beben) each interval times the barrier vanishes
-		earthQuakeEnable = G12GetPrivateProfileInt("BarrierEarthQuakeEnable", 0);
+		earthQuakeEnable = G12GetPrivateProfileInt("BarrierEarthQuakeEnable", FALSE);
 		earthQuakeInterval = G12GetPrivateProfileInt("BarrierEarthQuakeInterval", 20);
 
 		// Hook to add barrier texture

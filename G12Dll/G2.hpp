@@ -113,7 +113,7 @@ public:
 	friend zVEC3 operator *(zVEC3 &v, float &f);
 	friend zVEC3 operator ^(zVEC3 &a, zVEC3 &b);
 
-	float LegnthApprox() { XCALL(0x00490E10); }
+	float LengthApprox() { XCALL(0x00490E10); }
 	zVEC3 &NormalizeApprox() { XCALL(0x0054E750); }
 
 public:
@@ -219,10 +219,6 @@ public:
 
 		DWORD dword;
 	};
-
-public:
-	void SetAlphaByte(BYTE);
-	BYTE GetAlphaByte();
 };
 
 struct zTPlane

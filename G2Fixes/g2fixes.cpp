@@ -42,14 +42,14 @@ void hNpc::CreateVobList(float max_dist)
 
 		for (i = 0; i < this->vobList.numInArray; i++)
 		{
-			delete_vob = 0;
+			delete_vob = FALSE;
 
 			vob = this->vobList.array[i];
 			classDef = vob->_GetClassDef();
 
 			if (vob == this)
 			{
-				delete_vob = 1;
+				delete_vob = TRUE;
 			}
 
 			if (zCObject::CheckInheritance(&oCMobInter::classDef, classDef))
@@ -58,7 +58,7 @@ void hNpc::CreateVobList(float max_dist)
 
 				if (mob->IsOccupied())
 				{
-					delete_vob = 1;
+					delete_vob = TRUE;
 				}
 			}
 
@@ -66,9 +66,9 @@ void hNpc::CreateVobList(float max_dist)
 			{
 				npc = (oCNpc *)vob;
 
-				if (npc->attribute[0] <= 0 && npc->inventory2.IsEmpty(1, 1))
+				if (npc->attribute[0] <= 0 && npc->inventory2.IsEmpty(TRUE, TRUE))
 				{
-					delete_vob = 1;
+					delete_vob = TRUE;
 				}
 			}
 
@@ -84,31 +84,13 @@ void hNpc::CreateVobList(float max_dist)
 	}
 }
 
-void PatchFocus(void)
-{
-	InjectHook(0x0073369B, &hNpc::CreateVobList); // oCNpc::ToggleFocusVob()
-	InjectHook(0x00733BE9, &hNpc::CreateVobList); // oCNpc::CollectFocusVob()
-	InjectHook(0x0075DC54, &hNpc::CreateVobList); // oCNpc::PerceiveAll()
-	InjectHook(0x0075DE95, &hNpc::CreateVobList); // oCNpc::PerceptionCheck()
-}
-
-static zVEC3 defaultCol0;
-static zVEC3 defaultCol1;
-static zVEC3 defaultCol2;
-static zVEC3 defaultCol3;
-
 void hSkyControler_Outdoor::ReadFogColorsFromINI()
 {
-	this->zCSkyControler_Outdoor::ReadFogColorsFromINI();
+	zVEC3 defaultCol0;
+	zVEC3 defaultCol1;
+	zVEC3 defaultCol2;
+	zVEC3 defaultCol3;
 
-	this->fogColorDayVariations.array[0] = defaultCol0;
-	this->fogColorDayVariations.array[1] = defaultCol1;
-	this->fogColorDayVariations.array[2] = defaultCol2;
-	this->fogColorDayVariations.array[3] = defaultCol3;
-}
-
-void PatchFogColors(void)
-{
 	defaultCol0.n[0] = 116;
 	defaultCol0.n[1] = 89;
 	defaultCol0.n[2] = 75;
@@ -125,7 +107,19 @@ void PatchFogColors(void)
 	defaultCol3.n[1] = 140;
 	defaultCol3.n[2] = 180;
 
-	InjectHook(0x005E6443, &hSkyControler_Outdoor::ReadFogColorsFromINI); // zCSkyControler_Outdoor::zCSkyControler_Outdoor()
+	this->zCSkyControler_Outdoor::ReadFogColorsFromINI();
+
+	this->fogColorDayVariations.array[0] = defaultCol0;
+	this->fogColorDayVariations.array[1] = defaultCol1;
+	this->fogColorDayVariations.array[2] = defaultCol2;
+	this->fogColorDayVariations.array[3] = defaultCol3;
+}
+
+ASM(zCSkyControler_Mid_Hook)
+{
+	__asm { mov dword ptr[esi + 0x50], 0xFF005078 }
+
+	RET(0x005DFC30);
 }
 
 const char *Gothic1AppName = "Gothic - 2.6 (fix)";
@@ -134,7 +128,17 @@ const char *NoSound = "NEWGAME";
 
 void PatchGothic2(void)
 {
-	if (G12GetPrivateProfileInt("Gothic1Mode", 0))
+	if (G12GetPrivateProfileInt("HideFocus", FALSE))
+	{
+		// Unlike HideFocus from Systempack which is sometimes buggy and where vobs can still be focused when turning around quickly and spamming ctrl
+		// this patches CreateVobList() to the Sequel variant where a dead, empty NPC does not even end up in the focusable voblist
+		InjectHook(0x0073369B, &hNpc::CreateVobList); // oCNpc::ToggleFocusVob()
+		InjectHook(0x00733BE9, &hNpc::CreateVobList); // oCNpc::CollectFocusVob()
+		InjectHook(0x0075DC54, &hNpc::CreateVobList); // oCNpc::PerceiveAll()
+		InjectHook(0x0075DE95, &hNpc::CreateVobList); // oCNpc::PerceptionCheck()
+	}
+
+	if (G12GetPrivateProfileInt("Gothic1Mode", FALSE))
 	{
 		// Fix App Title
 		Patch(0x0089D9AC, Gothic1AppName);
@@ -153,22 +157,19 @@ void PatchGothic2(void)
 		Patch(0x006C2835 + 1, 6100);
 		Patch(0x006C283A + 1, 2000);
 
-		// Patch fogcolors to Gothic 1 fogcolors (perhaps change this so it only happens on WORLD, and gets done dynamically on levelchange?)
-		PatchFogColors();
+		// Fix underwater color and farZ
+		InjectHook(0x005DFC16, zCSkyControler_Mid_Hook, PATCH_JUMP);
+		Patch(0x005DFC3F + 3, 2500.0f);
+
+		// Patch fogcolors to Gothic 1 fogcolors
+		InjectHook(0x005E6443, &hSkyControler_Outdoor::ReadFogColorsFromINI); // zCSkyControler_Outdoor::zCSkyControler_Outdoor()
 	}
 
-	if (G12GetPrivateProfileInt("NoGamestartMusic", 0))
+	if (G12GetPrivateProfileInt("NoGamestartMusic", FALSE))
 	{
 		// No GAMESTART menu "music"
 		Patch(0x004DB7EE + 1, NoSound);
 		Patch(0x004DB815 + 1, NoSound);
-	}
-
-	if (G12GetPrivateProfileInt("HideFocus", 0))
-	{
-		// Unlike HideFocus from Systempack which is sometimes buggy and where vobs can still be focused when turning around quickly and spamming ctrl
-		// this patches CreateVobList() to the Sequel variant where a dead, empty NPC does not even end up in the focusable voblist
-		PatchFocus();
 	}
 }
 
