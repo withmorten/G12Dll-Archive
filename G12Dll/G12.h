@@ -17,8 +17,6 @@ UINT G12GetPrivateProfileInt(LPCTSTR lpKeyName, INT nDefault)
 		return GetPrivateProfileInt(G12DLL_NAME, lpKeyName, nDefault, G12INI_PATH1);
 	}
 
-	fclose(f);
-
 	return GetPrivateProfileInt(G12DLL_NAME, lpKeyName, nDefault, G12INI_PATH2);
 }
 
@@ -32,8 +30,6 @@ DWORD G12GetPrivateProfileString(LPCTSTR lpKeyName, LPCTSTR lpDefault, LPTSTR lp
 
 		return GetPrivateProfileString(G12DLL_NAME, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH1);
 	}
-
-	fclose(f);
 
 	return GetPrivateProfileString(G12DLL_NAME, lpKeyName, lpDefault, lpReturnedString, nSize, G12INI_PATH2);
 }

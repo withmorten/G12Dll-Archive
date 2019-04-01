@@ -218,7 +218,7 @@ void PatchSpacer2(void)
 	if (G12GetPrivateProfileInt("SpacerG1Zens", FALSE))
 	{
 		// Keep this enabled as long as you need to work on a Gothic 1 uncompiled ZEN
-		// I would not advise resaving it as an uncompiled Gothic 2 ZEN, because you will lose any items you have not yet implemented in your scripts yet
+		// I would not advise resaving it as an uncompiled Gothic 2 ZEN, because you will lose any items you have not implemented in your scripts yet
 
 		// zCVob::UnarchiveVerbose()
 
