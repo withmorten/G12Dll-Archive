@@ -175,7 +175,7 @@ void PatchGothic2(void)
 
 void PatchSpacer2(void)
 {
-	if (G12GetPrivateProfileInt("SpacerG1Map", FALSE))
+	if (G12GetPrivateProfileInt("SpacerG1Zens", FALSE))
 	{
 		// Only enable this temporarily if you want to open a Gothic 1 uncompiled zen
 
