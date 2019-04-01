@@ -175,14 +175,14 @@ void PatchGothic2(void)
 
 void PatchSpacer2(void)
 {
-	if (G12GetPrivateProfileInt("SpacerG1Zens", FALSE))
+	// Gothic 1 uncompiled Zens and Material libraries would be compatible in Spacer2 if the following values were read safely
+	// Nopping them results in Spacer2 using the default values instead of overwriting them with garbage
+
+	// Note that the Unarchiver will still complain about many missing entries from other values, but those get read safely and the original value remains intact
+
+	if (G12GetPrivateProfileInt("SpacerG1Pmls", FALSE))
 	{
-		// Only enable this temporarily if you want to open a Gothic 1 uncompiled zen
-
-		// Gothic 1 uncompiled Zens and Material libraries would be compatible in Spacer2 if the following values were read safely
-		// Nopping them results in Spacer2 using the default values instead of overwriting them with garbage
-
-		// Note that the Unarchiver will still complain about many missing entries, but it won't matter anymore
+		// Only enable this temporarily if you want to open Gothic 1 PMLs
 
 		// zCMaterial::Unarchive()
 		// Some WATER materials will require manual setting of the alphaFunc, as in Gothic 1 it got used differently on WATER
@@ -213,6 +213,12 @@ void PatchSpacer2(void)
 		Nop(0x006F11C2);
 		Patch(0x006F11C2 + 1, (BYTE)0xE9);
 		Nop(0x006F127E, 3);
+	}
+
+	if (G12GetPrivateProfileInt("SpacerG1Zens", FALSE))
+	{
+		// Keep this enabled as long as you need to work on a Gothic 1 uncompiled ZEN
+		// I would not advise resaving it as an uncompiled Gothic 2 ZEN, because you will lose any items you have not yet implemented in your scripts yet
 
 		// zCVob::UnarchiveVerbose()
 
