@@ -235,12 +235,12 @@ void PatchSpacer2(void)
 
 void Init(void)
 {
-	if (GOTHIC2)
+	if (GOTHIC26)
 	{
 		G12AllocConsole();
 		PatchGothic2();
 	}
-	else if (SPACER2)
+	else if (SPACER26)
 	{
 		G12AllocConsole();
 		PatchSpacer2();

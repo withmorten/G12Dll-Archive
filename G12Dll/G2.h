@@ -54,6 +54,12 @@ zVEC3 operator *(zVEC3 &v, float &f)
 	return n;
 }
 
+float operator *(zVEC3 &a, zVEC3 &b)
+{
+	return a.n[0] * b.n[0] + a.n[1] * b.n[1] + a.n[2] * b.n[2];
+}
+
+
 zVEC3 operator ^(zVEC3 &a, zVEC3 &b)
 {
 	zVEC3 v;

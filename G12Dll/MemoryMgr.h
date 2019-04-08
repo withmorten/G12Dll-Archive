@@ -20,12 +20,12 @@ typedef uintptr_t addr;
 	__asm { mov eax, uAddr	}	\
 	__asm { jmp eax			}
 
-#define FIELD(type, var, offset) *(type*)((unsigned char*)var + offset)
+#define FIELD(type, var, offset) *(type*)((unsigned char *)var + offset)
 
-template<typename T, typename AT> inline void
-Patch(AT address, T value)
+template<typename T> inline void
+Patch(DWORD address, T value)
 {
-	DWORD		dwProtect[2];
+	DWORD dwProtect[2];
 	VirtualProtect((void*)address, sizeof(T), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 	*(T*)address = value;
 	VirtualProtect((void*)address, sizeof(T), dwProtect[0], &dwProtect[1]);
@@ -34,7 +34,7 @@ Patch(AT address, T value)
 inline void
 PatchBytes(DWORD address, void *value, size_t nCount)
 {
-	DWORD		dwProtect[2];
+	DWORD dwProtect[2];
 	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 	memcpy((void*)address, value, nCount);
 	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
@@ -43,29 +43,25 @@ PatchBytes(DWORD address, void *value, size_t nCount)
 inline void
 ReadBytes(DWORD address, void *out, size_t nCount)
 {
-	DWORD		dwProtect[2];
+	DWORD dwProtect[2];
 	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 	memcpy(out, (void*)address, nCount);
 	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
 }
 
 inline void
-Nop(unsigned int address, unsigned int nCount = 1)
+Nop(DWORD address, size_t nCount = 1)
 {
-	DWORD		dwProtect[2];
-	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
-	memset((void*)address, 0x90, nCount);
-	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
+	DWORD dwProtect[2];
+	VirtualProtect((void *)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+	memset((void *)address, 0x90, nCount);
+	VirtualProtect((void *)address, nCount, dwProtect[0], &dwProtect[1]);
 }
 
 inline void
-NopTo(unsigned int address, unsigned int to)
+NopTo(DWORD address, DWORD to)
 {
-	DWORD		dwProtect[2];
-	unsigned int nCount = to - address;
-	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
-	memset((void*)address, 0x90, nCount);
-	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
+	Nop(address, to - address);
 }
 
 enum
@@ -76,37 +72,37 @@ enum
 	HOOK_SIZE = 5,
 };
 
-template<typename AT, typename HT> inline void
-InjectHook(AT address, HT hook, unsigned int nType=PATCH_NOTHING)
+template<typename HT> inline void
+InjectHook(DWORD address, HT hook, int nType = PATCH_NOTHING)
 {
-	DWORD		dwProtect[2];
+	DWORD dwProtect[2];
 	switch ( nType )
 	{
 	case PATCH_JUMP:
-		VirtualProtect((void*)address, HOOK_SIZE, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
-		*(BYTE*)address = 0xE9;
+		VirtualProtect((void *)address, HOOK_SIZE, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+		*(BYTE *)address = 0xE9;
 		break;
 	case PATCH_CALL:
-		VirtualProtect((void*)address, HOOK_SIZE, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
-		*(BYTE*)address = 0xE8;
+		VirtualProtect((void *)address, HOOK_SIZE, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+		*(BYTE *)address = 0xE8;
 		break;
 	default:
-		VirtualProtect((void*)((DWORD)address + 1), HOOK_SIZE - 1, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+		VirtualProtect((void *)((DWORD)address + 1), HOOK_SIZE - 1, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 		break;
 	}
-	DWORD		dwHook;
+	DWORD dwHook;
 	_asm
 	{
 		mov		eax, hook
 		mov		dwHook, eax
 	}
 
-	*(ptrdiff_t*)((DWORD)address + 1) = (DWORD)dwHook - (DWORD)address - HOOK_SIZE;
+	*(ptrdiff_t *)((DWORD)address + 1) = (DWORD)dwHook - (DWORD)address - HOOK_SIZE;
 
 	if ( nType == PATCH_NOTHING )
-		VirtualProtect((void*)((DWORD)address + 1), HOOK_SIZE - 1, dwProtect[0], &dwProtect[1]);
+		VirtualProtect((void *)((DWORD)address + 1), HOOK_SIZE - 1, dwProtect[0], &dwProtect[1]);
 	else
-		VirtualProtect((void*)address, HOOK_SIZE, dwProtect[0], &dwProtect[1]);
+		VirtualProtect((void *)address, HOOK_SIZE, dwProtect[0], &dwProtect[1]);
 }
 
 inline void ExtractCall(void *dst, addr a)

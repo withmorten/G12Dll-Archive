@@ -16,9 +16,6 @@ struct oTVobList;
 struct oTVobListNpcs;
 struct oTVobListItems;
 
-struct myPoly;
-struct myVert;
-
 struct zTNode;
 
 class zCLightMap;
@@ -111,9 +108,11 @@ public:
 	friend zVEC3 operator -(zVEC3 &v);
 	friend zVEC3 operator -(zVEC3 &a, zVEC3 &b);
 	friend zVEC3 operator *(zVEC3 &v, float &f);
+	friend float operator *(zVEC3 &a, zVEC3 &b);
 	friend zVEC3 operator ^(zVEC3 &a, zVEC3 &b);
 
 	float LengthApprox() { XCALL(0x00490E10); }
+	zVEC3 &Normalize() { XCALL(0x00490EA0); }
 	zVEC3 &NormalizeApprox() { XCALL(0x0054E750); }
 
 public:
@@ -319,6 +318,18 @@ struct zTSound3DParams
 	float pitchOffset;
 };
 
+struct myVert
+{
+	int vertIndex;
+	int vertNeighbours[8];
+	int numNeighbours;
+
+	int polyIndices[50];
+	int numPolyIndices;
+
+	int active;
+};
+
 struct myThunder
 {
 	zVEC3 originVec;
@@ -334,6 +345,11 @@ struct myThunder
 	int dead;
 	int isChild;
 	int sector;
+};
+
+struct myPoly
+{
+	int Alpha;
 };
 
 class zCClassDef
@@ -422,6 +438,20 @@ public:
 	float texv;
 };
 
+#pragma pack (push, 1)
+struct TFlags
+{
+	unsigned char portalPoly : 2;
+	unsigned char occluder : 1;
+	unsigned char sectorPoly : 1;
+	unsigned char mustRelight : 1;
+	unsigned char portalIndoorOutdoor : 1;
+	unsigned char ghostOccluder : 1;
+	unsigned char noDynLightNear : 1;
+	unsigned short sectorIndex : 16;
+};
+#pragma pack (pop)
+
 class zCPolygon
 {
 public:
@@ -436,8 +466,10 @@ public:
 	zCVertFeature **clipFeat;
 	int numClipVert;
 
-	zCVertFeature **features;
+	zCVertFeature **feature;
 	unsigned char polyNumVert;
+
+	TFlags flags;
 };
 
 class zCOBBox3D
@@ -478,6 +510,11 @@ public:
 
 	int numVertAlloc;
 	int numPolyAlloc;
+
+public:
+	static zCMesh *Load(zSTRING &meshFileName, int a_bDontConvertToNPolys) { XCALL(0x00567600); }
+
+	int Render(zTRenderContext &renderContext, zCOLOR *vertexColor) { XCALL(0x0056B210); }
 };
 
 class zCTexAniCtrl
@@ -840,6 +877,7 @@ public:
 
 public:
 	void Init() { XCALL(0x006B9440); }
+	void Initialise(int newNumMaxThunders) { XCALL(0x006B9BF0); }
 	void AddTremor(zTRenderContext &renderContext) { XCALL(0x006B9CE0); }
 	int RenderLayer(zTRenderContext &rndContext, int layerNumber, int &addNewThunder) { XCALL(0x006B9CF0); }
 	int Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible) { XCALL(0x006B9F30); }
@@ -853,6 +891,10 @@ class zCRnd_D3D
 {
 public:
 	void FlushPolys() { XCALL(0x0064DD10); }
+	void SetFog(int foggy) { XCALL(0x00651E80); }
+	int GetFog() { XCALL(0x00652070); }
+	void GetFogRange(float &nearz, float &farz, int &falloff) { XCALL(0x006522D0); }
+	void SetFogRange(float nearz, float farz, int falloff) { XCALL(0x006521E0); }
 	void SetZBufferWriteEnabled(int flag) { XCALL(0x006524E0); }
 	int GetZBufferWriteEnabled() { XCALL(0x00652520); }
 };

@@ -227,15 +227,15 @@ void PatchMagicFrontier(void)
 	}
 }
 
-#define BARRIER_ALPHA_MAX 120
+#define BARRIER_MAX_OPACITY 120
 #define BARRIER_COLOR 0x00FFFFFF
 
 static int meshLoaded = FALSE;
 static int firstRender = TRUE;
 
-static int isBarrierRender;
+static int barrierMaxOpacity = BARRIER_MAX_OPACITY;
 
-static hSkyControler_Barrier *zsky;
+static int isBarrierRender;
 
 static int earthQuakeInterval;
 static int earthQuakeTimer = 0;
@@ -273,7 +273,7 @@ static float delayTimeSector2 = 200.0f;
 static float delayTimeSector3 = 6000.0f;
 static float delayTimeSector4 = 10000.0f;
 
-static myThunder thunderList[20]; // "malloc"
+static myThunder thunderList[20]; // "new myThunder[20]"
 static myThunder *myThunderList;
 static int numMyThunders;
 
@@ -300,18 +300,218 @@ void hBarrier::AddEarthQuake()
 	}
 }
 
+void hBarrier::Init()
+{
+	this->originalTexUVList = 0;
+
+	this->skySphereMesh = zCMesh::Load(zSTRING("magicfrontier_out.3ds"), TRUE);
+
+	if (this->skySphereMesh)
+	{
+		int startPointsTemp[40];
+		int numStartPointsTemp;
+		int texUVListCtr = 0;
+
+		zCMaterial *material = this->skySphereMesh->polyList[0]->material;
+
+		material->SetTexture(zSTRING("BARRIERE.TGA"));
+		material->rndAlphaBlendFunc = zRND_ALPHA_FUNC_ADD;
+
+		int numTexUVs = this->skySphereMesh->numPoly * 3;
+		this->originalTexUVList = new zVEC2[numTexUVs];
+
+		float maxSkyY = this->skySphereMesh->bbox3D.maxs.n[1];
+		float minSkyY = maxSkyY * 0.925f;
+
+		for (int i = 0; i < this->skySphereMesh->numPoly; i++)
+		{
+			zCPolygon *poly = this->skySphereMesh->polyList[i];
+
+			for (int j = 0; j < poly->polyNumVert; j++)
+			{
+				zVEC2 *originalTexUV = new zVEC2();
+
+				zCVertFeature *feat = poly->feature[j];
+				zCVertex *vert = poly->vertex[j];
+
+				originalTexUV->n[0] = feat->texu;
+				originalTexUV->n[1] = feat->texv;
+
+				this->originalTexUVList[texUVListCtr++] = *originalTexUV;
+
+				float vertY = vert->position.n[1];
+
+				int alpha;
+
+				if (vertY > minSkyY)
+				{
+					alpha = (int)(255.0f * (maxSkyY - vertY) / (maxSkyY - minSkyY));
+				}
+				else
+				{
+					alpha = (int)(255.0f * (vertY / 8000.0f));
+				}
+
+				if (alpha > 255)
+				{
+					alpha = 255;
+				}
+
+				if (alpha < 0)
+				{
+					alpha = 0;
+				}
+
+				feat->lightDyn.dword = BARRIER_COLOR;
+				feat->lightDyn.alpha = alpha;
+
+				feat->lightStat.dword = BARRIER_COLOR;
+				feat->lightStat.alpha = alpha;
+			}
+		}
+
+		this->numMyVerts = this->skySphereMesh->numVert;
+		this->numMyPolys = this->skySphereMesh->numPoly;
+
+		this->myVertList = new myVert[this->numMyVerts];
+		memset(this->myVertList, 0x00, sizeof(myVert) * this->numMyVerts);
+
+		int goOn = TRUE;
+
+		for (int x = 0; x < this->numMyVerts; x++)
+		{
+			this->myVertList[x].vertIndex = x;
+
+			for (int z = 0; z < this->numMyPolys; z++)
+			{
+				int save_index = -1;
+
+				zCPolygon *poly = this->skySphereMesh->polyList[z];
+
+				for (int f = 0; f < poly->polyNumVert; f++)
+				{
+					if (this->skySphereMesh->vertList[x] == poly->vertex[f])
+					{
+						save_index = f;
+					}
+				}
+
+				int k = 0;
+
+				if (save_index != -1)
+				{
+					for (int h = 0; h < poly->polyNumVert; h++)
+					{
+						if (h != save_index)
+						{
+							for (k = 0; k < this->skySphereMesh->numVert; k++)
+							{
+								if (this->skySphereMesh->vertList[k] == poly->vertex[h])
+								{
+									for (int n = 0; n < this->myVertList[x].numNeighbours; n++)
+									{
+										if (this->myVertList[x].vertNeighbours[n] == k)
+										{
+											goOn = FALSE;
+										}
+									}
+
+									int addPolyIndex = TRUE;
+
+									for (int xx = 0; xx < this->myVertList[x].numPolyIndices; xx++)
+									{
+										if (z == this->myVertList[x].polyIndices[xx])
+										{
+											addPolyIndex = FALSE;
+										}
+									}
+
+									if (addPolyIndex)
+									{
+										this->myVertList[x].polyIndices[this->myVertList[x].numPolyIndices] = z;
+										this->myVertList[x].numPolyIndices++;
+									}
+
+									if (goOn)
+									{
+										this->myVertList[x].vertNeighbours[this->myVertList[x].numNeighbours] = k;
+										this->myVertList[x].numNeighbours++;
+									}
+
+									goOn = TRUE;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		this->numStartPoints1 = 0;
+		this->numStartPoints2 = 0;
+		this->numStartPoints3 = 0;
+		this->numStartPoints4 = 0;
+		this->topestPoint = 0;
+
+		float height2 = 35000.0f;
+		int count = 0;
+
+		for (int k = 0; k < this->numMyVerts; k++)
+		{
+			if (this->skySphereMesh->vertList[k]->position.n[1] > height2)
+			{
+				startPointsTemp[count] = k;
+				count++;
+			}
+		}
+
+		numStartPointsTemp = count;
+
+		for (int l = 0; l < numStartPointsTemp; l++)
+		{
+			zCVertex *vec = this->skySphereMesh->vertList[startPointsTemp[l]];
+
+			if (vec->position.n[0] <= -5008.4f && vec->position.n[2] < -5597.02f)
+			{
+				this->startPointList1[this->numStartPoints1] = startPointsTemp[l];
+				this->numStartPoints1++;
+			}
+
+			if (vec->position.n[0] > -5008.4f && vec->position.n[2] <= -5597.02f)
+			{
+				this->startPointList2[this->numStartPoints2] = startPointsTemp[l];
+				this->numStartPoints2++;
+			}
+
+			if (vec->position.n[0] > -5008.4f && vec->position.n[2] > -5597.02f)
+			{
+				this->startPointList3[this->numStartPoints3] = startPointsTemp[l];
+				this->numStartPoints3++;
+			}
+
+			if (vec->position.n[0] < -5008.4f && vec->position.n[2] > -5597.02f)
+			{
+				this->startPointList4[this->numStartPoints4] = startPointsTemp[l];
+				this->numStartPoints4++;
+			}
+
+			if (vec->position.n[0] == -5008.4f && vec->position.n[2] == -5597.02f)
+			{
+				this->topestPoint = startPointsTemp[l];
+			}
+		}
+
+		material->color.alpha = this->fadeState;
+
+		this->Initialise(20);
+	}
+}
+
 int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible)
 {
 	if (this->skySphereMesh)
 	{
 		zCMaterial *material = this->skySphereMesh->polyList[0]->material;
-
-		int zBufferWriteEnabled = zrenderer->GetZBufferWriteEnabled();
-		float farClipZ = zCCamera::activeCam->farClipZ;
-
-		zrenderer->SetZBufferWriteEnabled(FALSE);
-		zCCamera::activeCam->SetFarClipZ(2000000.0f);
-		rndContext.cam->SetTransform(1, rndContext.cam->connectedVob->trafoObjToWorld.InverseLinTrafo());
 
 		nextActivation -= ztimer.frameTimeFloat;
 
@@ -337,10 +537,14 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 					timeUpdatedFade = ztimer.totalTimeFloat;
 				}
 
-				if (this->fadeState > BARRIER_ALPHA_MAX)
+				if (this->fadeState > barrierMaxOpacity)
 				{
-					firstRender = FALSE;
-					this->fadeState = BARRIER_ALPHA_MAX;
+					if (firstRender)
+					{
+						firstRender = FALSE;
+					}
+
+					this->fadeState = barrierMaxOpacity;
 					this->fadeIn = FALSE;
 					showThunders = TRUE;
 					fadeTime = ztimer.totalTimeFloat;
@@ -371,7 +575,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 
 					if (this->fadeState < 1)
 					{
-						this->fadeState = FALSE;
+						this->fadeState = 0;
 						this->fadeIn = TRUE;
 						this->fadeOut = FALSE;
 						this->bFadeInOut = FALSE;
@@ -393,10 +597,22 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 			}
 		}
 
-		int addNewThunder = TRUE;
+		int zBufferWriteEnabled;
+		float zFarClip;
 
-		this->RenderLayer(rndContext, 0, addNewThunder);
-		this->RenderLayer(rndContext, 1, addNewThunder);
+		if (this->fadeState > 0)
+		{
+			zBufferWriteEnabled = zrenderer->GetZBufferWriteEnabled();
+			zFarClip = zCCamera::activeCam->farClipZ;
+			zrenderer->SetZBufferWriteEnabled(FALSE);
+			zCCamera::activeCam->SetFarClipZ(2000000.0f);
+			rndContext.cam->SetTransform(1, rndContext.cam->connectedVob->trafoObjToWorld.InverseLinTrafo());
+
+			int addNewThunder = TRUE;
+
+			this->RenderLayer(rndContext, 0, addNewThunder);
+			this->RenderLayer(rndContext, 1, addNewThunder);
+		}
 
 		if (showThunders)
 		{
@@ -520,8 +736,11 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 			}
 		}
 
-		zrenderer->SetZBufferWriteEnabled(zBufferWriteEnabled);
-		zCCamera::activeCam->SetFarClipZ(farClipZ);
+		if (this->fadeState > 0)
+		{
+			zrenderer->SetZBufferWriteEnabled(zBufferWriteEnabled);
+			zCCamera::activeCam->SetFarClipZ(zFarClip);
+		}
 	}
 
 	return this->bFadeInOut;
@@ -661,73 +880,6 @@ int hBarrier::RenderThunder(myThunder *thunder, zTRenderContext &rndContext)
 	return FALSE;
 }
 
-void hBarrier_Init(void)
-{
-	oCBarrier *barrier = zsky->barrier;
-
-	zCMesh *skySphereMesh = barrier->skySphereMesh;
-	zCMaterial *material = skySphereMesh->polyList[0]->material;
-
-	material->SetTexture(zSTRING("BARRIERE.TGA"));
-	material->rndAlphaBlendFunc = zRND_ALPHA_FUNC_ADD;
-	material->color.alpha = barrier->fadeState;
-
-	float maxHeight = skySphereMesh->bbox3D.maxs.n[1];
-	float minHeight = maxHeight * 0.925f;
-
-	for (int i = 0; i < skySphereMesh->numPoly; i++)
-	{
-		zCPolygon *poly = skySphereMesh->polyList[i];
-
-		for (int j = 0; j < poly->polyNumVert; j++)
-		{
-			int alpha;
-
-			zCVertFeature *feat = poly->features[j];
-			zCVertex *vert = poly->vertex[j];
-
-			if (vert->position.n[1] <= minHeight)
-			{
-				alpha = (int)((vert->position.n[1] / 8000.0f) * 255.0f);
-			}
-			else
-			{
-				alpha = (int)((maxHeight - vert->position.n[1]) * 255.0f / (maxHeight - minHeight));
-			}
-
-			if (alpha > 255)
-			{
-				alpha = 255;
-			}
-
-			if (alpha < 0)
-			{
-				alpha = 0;
-			}
-
-			feat->lightDyn.dword = BARRIER_COLOR;
-			feat->lightDyn.alpha = alpha;
-
-			feat->lightStat.dword = BARRIER_COLOR;
-			feat->lightStat.alpha = alpha;
-		}
-	}
-}
-
-ASM(oCBarrier_Init_Hook)
-{
-	__asm
-	{
-		pushad
-		call hBarrier_Init
-		popad
-		mov eax, [eax + 0x34]
-		lea ebx, [eax + eax * 2]
-	}
-
-	RET(0x006B94FF)
-}
-
 void hSkyControler_Barrier::RenderSkyPre(void)
 {
 	this->zCSkyControler_Outdoor::RenderSkyPre();
@@ -754,7 +906,6 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 
 		barrier->bFadeInOut = TRUE;
 
-		zsky = this;
 		barrier->Init();
 
 		// Instead of rewriting AddThunder, AddThunderSub and RemoveThunder just swap whichever thunder is supposed to be worked on
@@ -833,9 +984,6 @@ void PatchBarrier(void)
 		earthQuakeEnable = G12GetPrivateProfileInt("BarrierEarthQuakeEnable", FALSE);
 		earthQuakeInterval = G12GetPrivateProfileInt("BarrierEarthQuakeInterval", 20);
 
-		// Hook to add barrier texture
-		InjectHook(0x006B94F9, oCBarrier_Init_Hook, PATCH_JUMP); // oCBarrier::Init()
-
 		// Use our own RenderSkyPre()
 		Patch(0x0083C178, &hSkyControler_Barrier::RenderSkyPre); // oCSkyControler_Barrier::`vftable'
 
@@ -852,7 +1000,7 @@ void PatchGothic2(void)
 
 void Init(void)
 {
-	if (GOTHIC2)
+	if (GOTHIC26)
 	{
 		G12AllocConsole();
 		PatchGothic2();

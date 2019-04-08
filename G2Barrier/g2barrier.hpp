@@ -8,6 +8,7 @@ public:
 class hBarrier : public oCBarrier
 {
 public:
+	void Init();
 	void AddTremor(zTRenderContext &renderContext);
 	void AddEarthQuake();
 	int Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisible);

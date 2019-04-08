@@ -1,7 +1,8 @@
-#define GOTHIC1 (*(int *)0x004F3E10 == 0x5618EC83) // GothicMod.exe
-#define SPACER1 (*(int *)0x00836A52 == 0x102474FF) // spacer.exe
-#define GOTHIC2 (*(int *)0x00502D70 == 0x5614EC83) // Gothic2.exe
-#define SPACER2 (*(int *)0x008523A2 == 0x102474FF) // Spacer2.exe
+#define GOTHIC101 (*(int *)0x00512D50 == 0x8A18EC83) // Gothic.exe  1.01e
+#define GOTHIC108 (*(int *)0x004F3E10 == 0x5618EC83) // Gothic.exe  1.08k_mod
+#define SPACER15  (*(int *)0x00836A52 == 0x102474FF) // Spacer.exe  1.5
+#define GOTHIC26  (*(int *)0x00502D70 == 0x5614EC83) // Gothic2.exe 2.6
+#define SPACER26  (*(int *)0x008523A2 == 0x102474FF) // Spacer2.exe 2.6
 
 #define G12INI_PATH1 ".\\G12.ini"
 #define G12INI_PATH2 ".\\System\\G12.ini"
