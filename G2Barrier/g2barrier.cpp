@@ -738,7 +738,7 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 			}
 		}
 
-		if (this->fadeState > 0)
+		if (this->fadeState > 0 || alwaysVisible)
 		{
 			zrenderer->SetZBufferWriteEnabled(zBufferWriteEnabled);
 			zCCamera::activeCam->SetFarClipZ(zFarClip);
