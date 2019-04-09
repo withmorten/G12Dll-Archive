@@ -612,6 +612,8 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 
 			this->RenderLayer(rndContext, 0, addNewThunder);
 			this->RenderLayer(rndContext, 1, addNewThunder);
+
+			zrenderer->FlushPolys();
 		}
 
 		if (showThunders)
