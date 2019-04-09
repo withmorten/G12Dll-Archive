@@ -42,10 +42,10 @@ void PatchSpacer(void)
 	Patch(0x007A5C8A, (BYTE)0xEB);
 
 	// Don't save mesh for compiled ascii
-	Patch(0x007A1FD2 + 1, (BYTE)0);
+	Patch(0x007A1FD2 + 1, (BYTE)FALSE);
 
 	// Don't save mesh for uncompiled ascii
-	Patch(0x007A2095 + 1, (BYTE)0);
+	Patch(0x007A2095 + 1, (BYTE)FALSE);
 
 	// Don't show "memory leaks found" everytime quitting
 	Patch(0x005354A2 + 1, (BYTE)2);
