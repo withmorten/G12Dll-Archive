@@ -124,6 +124,9 @@ ASM(zCSkyControler_Mid_Hook)
 
 const char *Gothic1AppName = "Gothic - 2.6 (fix)";
 const char *Gothic1WorldZen = "WORLD.ZEN";
+const char *ItMiNugget = "ItMiNugget";
+const char *Erz = "Erz: ";
+const char *NotEnoughOre = "Nicht genug Erz um den Gegenstand zu kaufen.";
 const char *NoSound = "NEWGAME";
 
 void PatchGothic2(void)
@@ -146,6 +149,16 @@ void PatchGothic2(void)
 		// New game starts WORLD.ZEN
 		Patch(0x00429A23 + 1, Gothic1WorldZen);
 		Patch(0x00429A52 + 1, Gothic1WorldZen);
+
+		// Currency
+		Patch(0x00704931 + 1, ItMiNugget);
+		Patch(0x0070493C + 1, ItMiNugget);
+
+		Patch(0x0070DB01 + 1, Erz);
+		Patch(0x0070DB0C + 1, Erz);
+
+		Patch(0x0068BDC4 + 1, NotEnoughOre);
+		Patch(0x0068BDEB + 1, NotEnoughOre);
 
 		// No GAMESTART menu "music"
 		Patch(0x004DB7EE + 1, NoSound);
@@ -170,6 +183,15 @@ void PatchGothic2(void)
 		// No GAMESTART menu "music"
 		Patch(0x004DB7EE + 1, NoSound);
 		Patch(0x004DB815 + 1, NoSound);
+	}
+
+	if (G12GetPrivateProfileInt("DisableAutoCalcObstruction", FALSE))
+	{
+		// Use empty function
+		InjectHook(0x004F16C6, &hActiveSnd::AutoCalcObstruction);
+		InjectHook(0x004F2080, &hActiveSnd::AutoCalcObstruction);
+		InjectHook(0x004F259B, &hActiveSnd::AutoCalcObstruction);
+		InjectHook(0x004F3275, &hActiveSnd::AutoCalcObstruction);
 	}
 }
 

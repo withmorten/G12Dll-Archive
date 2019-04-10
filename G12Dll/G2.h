@@ -1,6 +1,6 @@
 zCInput_Win32 *&zinput = *(zCInput_Win32 **)0x008D1650;
 zCRnd_D3D *&zrenderer = *(zCRnd_D3D **)0x00982F08;
-zCSoundSystem *&zsound = *(zCSoundSystem **)0x0099B03C;
+zCSndSys_MSS *&zsound = *(zCSndSys_MSS **)0x0099B03C;
 zCTimer &ztimer = *(zCTimer *)0x0099B3D4;
 oCGame *&ogame = *(oCGame **)0x00AB0884;
 

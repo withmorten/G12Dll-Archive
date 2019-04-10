@@ -9,3 +9,9 @@ class hSkyControler_Outdoor : public zCSkyControler_Outdoor
 public:
 	void ReadFogColorsFromINI();
 };
+
+class hActiveSnd : public zCActiveSnd
+{
+public:
+	void AutoCalcObstruction(int immediate) { return; }
+};

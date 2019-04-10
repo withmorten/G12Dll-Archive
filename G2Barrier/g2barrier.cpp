@@ -273,8 +273,7 @@ static float delayTimeSector2 = 200.0f;
 static float delayTimeSector3 = 6000.0f;
 static float delayTimeSector4 = 10000.0f;
 
-static myThunder thunderList[20]; // "new myThunder[20]"
-static myThunder *myThunderList;
+static myThunder *myThunderList = NULL;
 static int numMyThunders;
 
 void hBarrier::AddTremor(zTRenderContext &renderContext)
@@ -504,6 +503,20 @@ void hBarrier::Init()
 		material->color.alpha = this->fadeState;
 
 		this->Initialise(20);
+
+		// Init extra 20 thunders for barrier
+		myThunder *myThunderList = this->myThunderList;
+		int numMyThunders = this->numMyThunders;
+
+		this->myThunderList = ::myThunderList;
+
+		this->Initialise(20);
+
+		::myThunderList = this->myThunderList;
+		::numMyThunders = this->numMyThunders;
+
+		this->myThunderList = myThunderList;
+		this->numMyThunders = numMyThunders;
 	}
 }
 
@@ -909,12 +922,6 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 		barrier->bFadeInOut = TRUE;
 
 		barrier->Init();
-
-		// Instead of rewriting AddThunder, AddThunderSub and RemoveThunder just swap whichever thunder is supposed to be worked on
-		// Copy it once here, afterwards just switch pointers
-		::myThunderList = ::thunderList;
-		::numMyThunders = 20;
-		memcpy(::myThunderList, barrier->myThunderList, sizeof(myThunder) * 20);
 	}
 
 	zTRenderContext rndContext;
@@ -947,19 +954,20 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 		rndContext.vob = zCCamera::activeCam->connectedVob;
 
 		// Save thunder
-		myThunder *myThunderList;
-		int numMyThunders;
-
-		// Instead of rewriting AddThunder, AddThunderSub and RemoveThunder just swap whichever thunder is supposed to be worked on
-		myThunderList = barrier->myThunderList;
-		numMyThunders = barrier->numMyThunders;
+		myThunder *myThunderList = barrier->myThunderList;
+		int numMyThunders = barrier->numMyThunders;
 
 		barrier->myThunderList = ::myThunderList;
 		barrier->numMyThunders = ::numMyThunders;
 
+		// Instead of rewriting AddThunder, AddThunderSub and RemoveThunder just swap whichever thunder is supposed to be worked on
+
 		isBarrierRender = TRUE;
 
 		barrier->Render(rndContext, this->bFadeInOut, alwaysVisible);
+
+		::myThunderList = barrier->myThunderList;
+		::numMyThunders = barrier->numMyThunders;
 
 		barrier->myThunderList = myThunderList;
 		barrier->numMyThunders = numMyThunders;
