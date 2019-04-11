@@ -96,7 +96,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\G12Dll\MemoryMgr.h" />
+    <ClInclude Include="..\G12Dll\version.h" />
     <ClInclude Include="..\G2Fixes\g2fixes.hpp" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DInput.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

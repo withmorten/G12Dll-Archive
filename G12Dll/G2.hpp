@@ -116,6 +116,7 @@ class zVEC3
 public:
 	zVEC3 &operator +=(zVEC3 &v) { XCALL(0x004B60A0); }
 	zVEC3 &operator -=(zVEC3 &v) { XCALL(0x00554A00); }
+	friend zVEC3 operator +(zVEC3 &a, zVEC3 &b);
 	friend zVEC3 operator -(zVEC3 &v);
 	friend zVEC3 operator -(zVEC3 &a, zVEC3 &b);
 	friend zVEC3 operator *(zVEC3 &v, float &f);
@@ -134,6 +135,12 @@ class zVEC4
 {
 public:
 	float n[4];
+};
+
+class zMAT3
+{
+public:
+	zVEC3 v[3];
 };
 
 class zMAT4
@@ -626,6 +633,39 @@ public:
 	void OnMessage(zCEventMessage *message, zCVob *sourceVob) { XCALL(0x00786380); }
 };
 
+class zCRigidBody
+{
+public:
+	float mass;
+	float massInv;
+	zMAT3 iBody;
+	zMAT3 iBodyInv;
+
+	zVEC3 xPos;
+	zMAT3 RDir;
+	zVEC3 PLinMom;
+	zVEC3 LAngMom;
+
+	zMAT3 iInv;
+	zVEC3 v;
+	zVEC3 omega;
+
+	zVEC3 force;
+	zVEC3 torque;
+
+	float gravityScale;
+	zVEC3 slideDir;
+	float slideAngle;
+
+	unsigned char gravityOn : 1;
+	unsigned char collisionHad : 1;
+	unsigned char mode : 1;
+	unsigned char justSetSliding : 4;
+
+public:
+	void SetVelocity(zVEC3 &vel) { XCALL(0x005B66D0); }
+};
+
 class zCVob : public zCObject
 {
 public:
@@ -697,8 +737,10 @@ public:
 
 public:
 	zCEventManager *__fastcall GetEM(int dontCreate) { XCALL(0x005FFE10); }
+	void SetSleeping(int sleep) { XCALL(0x00602930); }
 	float GetDistanceToVob2(zCVob &v) { XCALL(0x0061BA40); }
 	void SetPositionWorld(zVEC3 &posWorld) { XCALL(0x0061BB70); }
+	void SetPhysicsEnabled(int enable) { XCALL(0x0061D190); }
 	void BeginMovement() { XCALL(0x0061DA80); }
 	void EndMovement(int a_bHintTrafoChanged) { XCALL(0x0061E0D0); }
 };
@@ -1199,6 +1241,9 @@ public:
 	zCArray<zCVob *> walkList;
 
 	zCArray<zCVob *> vobHashTable[2048];
+
+public:
+	int __fastcall TraceRayNearestHit(zVEC3 &rayOrigin, zVEC3 &ray, zCVob *ignoreVob, int traceFlags) { XCALL(0x00621FA0); }
 };
 
 class zCCSPlayer
@@ -1319,6 +1364,8 @@ struct TNpcSlot
 };
 
 class oCVob : public zCVob { };
+
+class oCItem : public oCVob { };
 
 class oCWorld : public zCWorld
 {
@@ -1885,13 +1932,20 @@ public:
 
 public:
 	oCVisualFX *CreateEffect() { XCALL(0x004842E0); }
+	void StopTargetEffects(zCVob *vob) { XCALL(0x00485C40); }
+	int IsValidTarget(zCVob *v) { XCALL(0x004861D0); }
+	int IsInvestSpell() { XCALL(0x00486630); }
 	void DoLogicInvestEffect() { XCALL(0x00486950); }
 	int CastSpecificSpell() { XCALL(0x00486960); }
 	void EndTimedEffect() { XCALL(0x00486E10); }
 	void DoTimedEffect() { XCALL(0x00487280); }
 };
 
-class oCMOB : public oCVob { };
+class oCMOB : public oCVob
+{
+public:
+	int IsMovable() { XCALL(0x0071BF20); }
+};
 
 class oCMobInter : public oCMOB
 {

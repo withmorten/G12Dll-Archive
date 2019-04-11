@@ -93,8 +93,13 @@
     <ClInclude Include="..\G12Dll\G12.h" />
     <ClInclude Include="..\G12Dll\G2.h" />
     <ClInclude Include="..\G12Dll\G2.hpp" />
+    <ClInclude Include="..\G12Dll\version.h" />
     <ClInclude Include="g2barrier.hpp" />
     <ClInclude Include="..\G12Dll\MemoryMgr.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="G2Barrier.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

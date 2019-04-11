@@ -21,6 +21,17 @@ WRAPPER int _rand(void) { EAXJMP(0x007D2F98); }
 
 WRAPPER void GetNearestPointFromLineSegment2D(zVEC2 &a, zVEC2 &b, zVEC2 &c, zVEC2 &nearest) { EAXJMP(0x00474080); }
 
+zVEC3 operator +(zVEC3 &a, zVEC3 &b)
+{
+	zVEC3 v;
+
+	v.n[0] = a.n[0] + b.n[0];
+	v.n[1] = a.n[1] + b.n[1];
+	v.n[2] = a.n[2] + b.n[2];
+
+	return v;
+}
+
 zVEC3 operator -(zVEC3 &v)
 {
 	zVEC3 n;
