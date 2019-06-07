@@ -57,15 +57,9 @@ void Init(void)
 			{
 				for (p = path; *p; p++)
 				{
-					if (*p == '\r')
-					{
-						*p = '\0';
-					}
+					if (*p == '\r') *p = '\0';
 
-					if (*p == '\n')
-					{
-						*p = '\0';
-					}
+					if (*p == '\n') *p = '\0';
 				}
 
 				LoadLibrary(path);

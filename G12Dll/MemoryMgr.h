@@ -10,7 +10,7 @@ typedef uintptr_t addr;
 #define ASM(name) void __declspec(naked) name(void)
 
 #define NOVMT __declspec(novtable)
-#define SETVMT(a) *((DWORD_PTR*)this) = (DWORD_PTR)a
+#define SETVMT(a) *((DWORD_PTR *)this) = (DWORD_PTR)a
 
 #pragma warning(disable:4731) // -- suppress C4731:"frame pointer register 'ebp' modified by inline assembly code"
 
@@ -20,48 +20,38 @@ typedef uintptr_t addr;
 	__asm { mov eax, uAddr	}	\
 	__asm { jmp eax			}
 
-#define FIELD(type, var, offset) *(type*)((unsigned char *)var + offset)
+#define FIELD(type, var, offset) *(type *)((unsigned char *)var + offset)
 
-template<typename T> inline void
-Patch(DWORD address, T value)
+template<typename T> inline void Patch(DWORD address, T value)
 {
 	DWORD dwProtect[2];
-	VirtualProtect((void*)address, sizeof(T), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
-	*(T*)address = value;
-	VirtualProtect((void*)address, sizeof(T), dwProtect[0], &dwProtect[1]);
+	VirtualProtect((void *)address, sizeof(T), PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+	*(T *)address = value;
+	VirtualProtect((void *)address, sizeof(T), dwProtect[0], &dwProtect[1]);
 }
 
-inline void
-PatchBytes(DWORD address, void *value, size_t nCount)
+inline void PatchBytes(DWORD address, void *value, size_t nCount)
 {
 	DWORD dwProtect[2];
-	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
-	memcpy((void*)address, value, nCount);
-	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
+	VirtualProtect((void *)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+	memcpy((void *)address, value, nCount);
+	VirtualProtect((void *)address, nCount, dwProtect[0], &dwProtect[1]);
 }
 
-inline void
-ReadBytes(DWORD address, void *out, size_t nCount)
+inline void ReadBytes(DWORD address, void *out, size_t nCount)
 {
 	DWORD dwProtect[2];
-	VirtualProtect((void*)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
-	memcpy(out, (void*)address, nCount);
-	VirtualProtect((void*)address, nCount, dwProtect[0], &dwProtect[1]);
+	VirtualProtect((void *)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
+	memcpy(out, (void *)address, nCount);
+	VirtualProtect((void *)address, nCount, dwProtect[0], &dwProtect[1]);
 }
 
-inline void
-Nop(DWORD address, size_t nCount = 1)
+inline void Nop(DWORD address, size_t nCount = 1)
 {
 	DWORD dwProtect[2];
 	VirtualProtect((void *)address, nCount, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
 	memset((void *)address, 0x90, nCount);
 	VirtualProtect((void *)address, nCount, dwProtect[0], &dwProtect[1]);
-}
-
-inline void
-NopTo(DWORD address, DWORD to)
-{
-	Nop(address, to - address);
 }
 
 enum
@@ -72,11 +62,10 @@ enum
 	HOOK_SIZE = 5,
 };
 
-template<typename HT> inline void
-InjectHook(DWORD address, HT hook, int nType = PATCH_NOTHING)
+template<typename HT> inline void InjectHook(DWORD address, HT hook, int nType = PATCH_NOTHING)
 {
 	DWORD dwProtect[2];
-	switch ( nType )
+	switch (nType)
 	{
 	case PATCH_JUMP:
 		VirtualProtect((void *)address, HOOK_SIZE, PAGE_EXECUTE_READWRITE, &dwProtect[0]);
@@ -93,33 +82,36 @@ InjectHook(DWORD address, HT hook, int nType = PATCH_NOTHING)
 	DWORD dwHook;
 	_asm
 	{
-		mov		eax, hook
-		mov		dwHook, eax
+		mov	eax, hook
+		mov	dwHook, eax
 	}
 
 	*(ptrdiff_t *)((DWORD)address + 1) = (DWORD)dwHook - (DWORD)address - HOOK_SIZE;
 
-	if ( nType == PATCH_NOTHING )
+	if (nType == PATCH_NOTHING)
 		VirtualProtect((void *)((DWORD)address + 1), HOOK_SIZE - 1, dwProtect[0], &dwProtect[1]);
 	else
 		VirtualProtect((void *)address, HOOK_SIZE, dwProtect[0], &dwProtect[1]);
 }
 
-inline void ExtractCall(void *dst, addr a)
+inline void PatchJump(DWORD address, DWORD to)
 {
-	*(addr*)dst = (addr)(*(addr*)(a+1) + a + 5);
+	InjectHook(address, to, PATCH_JUMP);
 }
 
-template<typename T>
-inline void InterceptCall(void *dst, T func, addr a)
+inline void ExtractCall(void *dst, addr a)
+{
+	*(addr*)dst = (addr)(*(addr *)(a+1) + a + 5);
+}
+
+template<typename T> inline void InterceptCall(void *dst, T func, addr a)
 {
 	ExtractCall(dst, a);
 	InjectHook(a, func);
 }
 
-template<typename T>
-inline void InterceptVmethod(void *dst, T func, addr a)
+template<typename T> inline void InterceptVmethod(void *dst, T func, addr a)
 {
-	*(addr*)dst = *(addr*)a;
+	*(addr *)dst = *(addr *)a;
 	Patch(a, func);
 }

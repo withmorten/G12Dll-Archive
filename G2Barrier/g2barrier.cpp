@@ -17,37 +17,39 @@
 
 static char worldName[MAX_PATH];
 
-static zVEC2 newPointList[38];
+#define POINTS_WORLD 38
+
+static zVEC2 newPointList[POINTS_WORLD];
 
 float hMagFrontier::GetDistance(zVEC3 &pos, float &dist, zVEC3 &nearestPoint)
 {
 	float real_dist;
-	zVEC2 playerPos, point2, point1, nearest;
+	zVEC2 pos2d, a, b, nearest;
 
 	int i;
 
 	dist = 10000000.0f;
 
-	playerPos.n[0] = pos.n[0];
-	playerPos.n[1] = pos.n[2];
+	pos2d.n[0] = pos.n[0];
+	pos2d.n[1] = pos.n[2];
 
-	if (playerPos.n[0] == 0.0f && playerPos.n[1] == 0.0f)
+	if (pos2d.n[0] == 0.0f && pos2d.n[1] == 0.0f)
 	{
 		return dist;
 	}
 
-	for (i = 1; i < 38; i++)
+	for (i = 0; i < POINTS_WORLD - 1; i++)
 	{
-		point1.n[0] = newPointList[i - 1].n[0];
-		point1.n[1] = newPointList[i - 1].n[1];
+		a.n[0] = newPointList[i].n[0];
+		a.n[1] = newPointList[i].n[1];
 
-		point2.n[0] = newPointList[i].n[0];
-		point2.n[1] = newPointList[i].n[1];
+		b.n[0] = newPointList[i + 1].n[0];
+		b.n[1] = newPointList[i + 1].n[1];
 
-		GetNearestPointFromLineSegment2D(point1, point2, playerPos, nearest);
+		GetNearestPointFromLineSegment2D(a, b, pos2d, nearest);
 
-		real_dist = sqrtf((nearest.n[1] - playerPos.n[1]) * (nearest.n[1] - playerPos.n[1]) +
-							(nearest.n[0] - playerPos.n[0]) * (nearest.n[0] - playerPos.n[0]));
+		real_dist = sqrtf((nearest.n[1] - pos2d.n[1]) * (nearest.n[1] - pos2d.n[1]) +
+							(nearest.n[0] - pos2d.n[0]) * (nearest.n[0] - pos2d.n[0]));
 
 		if (real_dist < dist)
 		{
@@ -115,58 +117,58 @@ void hMagFrontier::DoCheck(void)
 void MagicFrontierNewPointListInit(void)
 {
 	// newPointList from Gothic 1
-	newPointList[0].n[0] = 57939.2f;
-	newPointList[0].n[1] = 1280.28f;
-	newPointList[1].n[0] = 55954.4f;
-	newPointList[1].n[1] = 5421.51f;
-	newPointList[2].n[0] = 52856.8f;
-	newPointList[2].n[1] = 10047.0f;
-	newPointList[3].n[0] = 49451.9f;
-	newPointList[3].n[1] = 14908.2f;
-	newPointList[4].n[0] = 44199.8f;
-	newPointList[4].n[1] = 20513.3f;
-	newPointList[5].n[0] = 37684.2f;
-	newPointList[5].n[1] = 26271.2f;
-	newPointList[6].n[0] = 30434.0f;
-	newPointList[6].n[1] = 31462.4f;
-	newPointList[7].n[0] = 25573.6f;
-	newPointList[7].n[1] = 32692.7f;
-	newPointList[8].n[0] = 21248.3f;
-	newPointList[8].n[1] = 35176.1f;
-	newPointList[9].n[0] = 19450.7f;
-	newPointList[9].n[1] = 35205.0f;
-	newPointList[10].n[0] = 16263.1f;
-	newPointList[10].n[1] = 32799.6f;
-	newPointList[11].n[0] = 10755.6f;
-	newPointList[11].n[1] = 34744.4f;
-	newPointList[12].n[0] = 9736.9f;
-	newPointList[12].n[1] = 37990.5f;
-	newPointList[13].n[0] = 8218.6f;
-	newPointList[13].n[1] = 38393.1f;
-	newPointList[14].n[0] = 4065.0f;
-	newPointList[14].n[1] = 39018.4f;
-	newPointList[15].n[0] = 839.9f;
-	newPointList[15].n[1] = 39079.3f;
-	newPointList[16].n[0] = -9312.9f;
-	newPointList[16].n[1] = 38694.2f;
+	newPointList [0].n[0] =  57939.2f;
+	newPointList [0].n[1] =  1280.28f;
+	newPointList [1].n[0] =  55954.4f;
+	newPointList [1].n[1] =  5421.51f;
+	newPointList [2].n[0] =  52856.8f;
+	newPointList [2].n[1] =  10047.0f;
+	newPointList [3].n[0] =  49451.9f;
+	newPointList [3].n[1] =  14908.2f;
+	newPointList [4].n[0] =  44199.8f;
+	newPointList [4].n[1] =  20513.3f;
+	newPointList [5].n[0] =  37684.2f;
+	newPointList [5].n[1] =  26271.2f;
+	newPointList [6].n[0] =  30434.0f;
+	newPointList [6].n[1] =  31462.4f;
+	newPointList [7].n[0] =  25573.6f;
+	newPointList [7].n[1] =  32692.7f;
+	newPointList [8].n[0] =  21248.3f;
+	newPointList [8].n[1] =  35176.1f;
+	newPointList [9].n[0] =  19450.7f;
+	newPointList [9].n[1] =  35205.0f;
+	newPointList[10].n[0] =  16263.1f;
+	newPointList[10].n[1] =  32799.6f;
+	newPointList[11].n[0] =  10755.6f;
+	newPointList[11].n[1] =  34744.4f;
+	newPointList[12].n[0] =   9736.9f;
+	newPointList[12].n[1] =  37990.5f;
+	newPointList[13].n[0] =   8218.6f;
+	newPointList[13].n[1] =  38393.1f;
+	newPointList[14].n[0] =   4065.0f;
+	newPointList[14].n[1] =  39018.4f;
+	newPointList[15].n[0] =    839.9f;
+	newPointList[15].n[1] =  39079.3f;
+	newPointList[16].n[0] =  -9312.9f;
+	newPointList[16].n[1] =  38694.2f;
 	newPointList[17].n[0] = -19258.3f;
-	newPointList[17].n[1] = 40991.4f;
+	newPointList[17].n[1] =  40991.4f;
 	newPointList[18].n[0] = -29684.1f;
-	newPointList[18].n[1] = 40535.7f;
+	newPointList[18].n[1] =  40535.7f;
 	newPointList[19].n[0] = -39313.7f;
-	newPointList[19].n[1] = 36558.8f;
+	newPointList[19].n[1] =  36558.8f;
 	newPointList[20].n[0] = -49319.6f;
-	newPointList[20].n[1] = 31970.2f;
+	newPointList[20].n[1] =  31970.2f;
 	newPointList[21].n[0] = -54137.3f;
-	newPointList[21].n[1] = 26761.7f;
+	newPointList[21].n[1] =  26761.7f;
 	newPointList[22].n[0] = -62089.3f;
-	newPointList[22].n[1] = 21598.1f;
+	newPointList[22].n[1] =  21598.1f;
 	newPointList[23].n[0] = -66193.7f;
-	newPointList[23].n[1] = 12999.2f;
+	newPointList[23].n[1] =  12999.2f;
 	newPointList[24].n[0] = -66132.3f;
-	newPointList[24].n[1] = 6204.0f;
+	newPointList[24].n[1] =   6204.0f;
 	newPointList[25].n[0] = -63855.2f;
-	newPointList[25].n[1] = -5700.8f;
+	newPointList[25].n[1] =  -5700.8f;
 	newPointList[26].n[0] = -59385.1f;
 	newPointList[26].n[1] = -10081.5f;
 	newPointList[27].n[0] = -56013.8f;
@@ -177,38 +179,38 @@ void MagicFrontierNewPointListInit(void)
 	newPointList[29].n[1] = -38319.2f;
 	newPointList[30].n[0] = -24664.7f;
 	newPointList[30].n[1] = -46687.9f;
-	newPointList[31].n[0] = -7860.6f;
+	newPointList[31].n[0] =  -7860.6f;
 	newPointList[31].n[1] = -48966.6f;
-	newPointList[32].n[0] = 4876.6f;
+	newPointList[32].n[0] =   4876.6f;
 	newPointList[32].n[1] = -49691.0f;
-	newPointList[33].n[0] = 23147.8f;
+	newPointList[33].n[0] =  23147.8f;
 	newPointList[33].n[1] = -47875.1f;
-	newPointList[34].n[0] = 48722.3f;
+	newPointList[34].n[0] =  48722.3f;
 	newPointList[34].n[1] = -39488.8f;
-	newPointList[35].n[0] = 55902.4f;
+	newPointList[35].n[0] =  55902.4f;
 	newPointList[35].n[1] = -31909.8f;
-	newPointList[36].n[0] = 61238.6f;
+	newPointList[36].n[0] =  61238.6f;
 	newPointList[36].n[1] = -23412.8f;
-	newPointList[37].n[0] = 60230.1f;
-	newPointList[37].n[1] = -6641.9f;
+	newPointList[37].n[0] =  60230.1f;
+	newPointList[37].n[1] =  -6641.9f;
 }
 
 void MagicFrontierNewPointListInitGRM(void)
 {
 	// newPointList from GRM
 	newPointList[17].n[0] = -26219.2f;
-	newPointList[17].n[1] = 40844.2f;
+	newPointList[17].n[1] =  40844.2f;
 	newPointList[18].n[0] = -34576.0f;
-	newPointList[18].n[1] = 43032.3f;
+	newPointList[18].n[1] =  43032.3f;
 	newPointList[19].n[0] = -44458.8f;
-	newPointList[19].n[1] = 43099.2f;
+	newPointList[19].n[1] =  43099.2f;
 	newPointList[20].n[0] = -49763.7f;
-	newPointList[20].n[1] = 37384.8f;
+	newPointList[20].n[1] =  37384.8f;
 }
 
 void PatchMagicFrontier(void)
 {
-	if (G12GetPrivateProfileInt("MagicFrontierEnable", FALSE))
+	if (G12GetPrivateProfileBool("MagicFrontierEnable", FALSE))
 	{
 		if (!strlen(worldName))
 		{
@@ -220,20 +222,19 @@ void PatchMagicFrontier(void)
 		InjectHook(0x0073E71B, &hMagFrontier::DoCheck); // oCNpc::ProcessNpc()
 	}
 
-	if (G12GetPrivateProfileInt("MagicFrontierPointsWorldGRM", FALSE))
+	if (G12GetPrivateProfileBool("MagicFrontierPointsWorldGRM", FALSE))
 	{
 		// GRMFixes has some different points ... just included here for now
 		MagicFrontierNewPointListInitGRM();
 	}
 }
 
+#define BARRIER_MIN_OPACITY 0
 #define BARRIER_MAX_OPACITY 120
 #define BARRIER_COLOR 0x00FFFFFF
 
 static int meshLoaded = FALSE;
 static int firstRender = TRUE;
-
-static int barrierMaxOpacity = BARRIER_MAX_OPACITY;
 
 static int isBarrierRender;
 
@@ -550,14 +551,14 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 					timeUpdatedFade = ztimer.totalTimeFloat;
 				}
 
-				if (this->fadeState > barrierMaxOpacity)
+				if (this->fadeState > BARRIER_MAX_OPACITY)
 				{
 					if (firstRender)
 					{
 						firstRender = FALSE;
 					}
 
-					this->fadeState = barrierMaxOpacity;
+					this->fadeState = BARRIER_MAX_OPACITY;
 					this->fadeIn = FALSE;
 					showThunders = TRUE;
 					fadeTime = ztimer.totalTimeFloat;
@@ -586,9 +587,9 @@ int hBarrier::Render(zTRenderContext &rndContext, int fadeInOut, int alwaysVisib
 						timeUpdatedFade = ztimer.totalTimeFloat;
 					}
 
-					if (this->fadeState < 1)
+					if (this->fadeState <= BARRIER_MIN_OPACITY)
 					{
-						this->fadeState = 0;
+						this->fadeState = BARRIER_MIN_OPACITY;
 						this->fadeIn = TRUE;
 						this->fadeOut = FALSE;
 						this->bFadeInOut = FALSE;
@@ -953,16 +954,14 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 		rndContext.world = zCCamera::activeCam->connectedVob->homeWorld;
 		rndContext.vob = zCCamera::activeCam->connectedVob;
 
-		// Save thunder
+		isBarrierRender = TRUE;
+
+		// Instead of rewriting AddThunder, AddThunderSub and RemoveThunder just swap whichever thunder is supposed to be worked on
 		myThunder *myThunderList = barrier->myThunderList;
 		int numMyThunders = barrier->numMyThunders;
 
 		barrier->myThunderList = ::myThunderList;
 		barrier->numMyThunders = ::numMyThunders;
-
-		// Instead of rewriting AddThunder, AddThunderSub and RemoveThunder just swap whichever thunder is supposed to be worked on
-
-		isBarrierRender = TRUE;
 
 		barrier->Render(rndContext, this->bFadeInOut, alwaysVisible);
 
@@ -976,22 +975,22 @@ void hSkyControler_Barrier::RenderSkyPre(void)
 
 void PatchBarrier(void)
 {
-	if (G12GetPrivateProfileInt("BarrierEnable", FALSE))
+	if (G12GetPrivateProfileBool("BarrierEnable", FALSE))
 	{
-		G12GetPrivateProfileString("WorldName", WORLD_NAME, worldName, MAX_PATH);
+		G12GetPrivateProfileString("WorldName", WORLD_NAME, worldName, sizeof(worldName));
 
-		alwaysVisible = G12GetPrivateProfileInt("BarrierAlwaysOn", FALSE);
-		ignoreSkyEffectsSetting = G12GetPrivateProfileInt("BarrierIgnoreSkyEffectsSetting", FALSE);
+		alwaysVisible = G12GetPrivateProfileBool("BarrierAlwaysOn", FALSE);
+		ignoreSkyEffectsSetting = G12GetPrivateProfileBool("BarrierIgnoreSkyEffectsSetting", FALSE);
 
 		timeToStayVisible = (float)(G12GetPrivateProfileInt("BarrierTimeOn", 25) * 1000);
 
 		timeToStayHidden = (float)(G12GetPrivateProfileInt("BarrierTimeOff", 1200) * 1000);
 
 		// looks bad when walking, should probably not be enabled at all, creates a small tremor each barrier thunder
-		tremorEnable = G12GetPrivateProfileInt("BarrierTremorEnable", FALSE);
+		tremorEnable = G12GetPrivateProfileBool("BarrierTremorEnable", FALSE);
 
 		// creates an earthQuake (eines dieser Beben) each interval times the barrier vanishes
-		earthQuakeEnable = G12GetPrivateProfileInt("BarrierEarthQuakeEnable", FALSE);
+		earthQuakeEnable = G12GetPrivateProfileBool("BarrierEarthQuakeEnable", FALSE);
 		earthQuakeInterval = G12GetPrivateProfileInt("BarrierEarthQuakeInterval", 20);
 
 		// Use our own RenderSkyPre()

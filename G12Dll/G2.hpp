@@ -116,10 +116,12 @@ class zVEC3
 public:
 	zVEC3 &operator +=(zVEC3 &v) { XCALL(0x004B60A0); }
 	zVEC3 &operator -=(zVEC3 &v) { XCALL(0x00554A00); }
-	friend zVEC3 operator +(zVEC3 &a, zVEC3 &b);
 	friend zVEC3 operator -(zVEC3 &v);
+	friend zVEC3 operator +(zVEC3 &v, float f);
+	friend zVEC3 operator +(zVEC3 &a, zVEC3 &b);
+	friend zVEC3 operator -(zVEC3 &v, float f);
 	friend zVEC3 operator -(zVEC3 &a, zVEC3 &b);
-	friend zVEC3 operator *(zVEC3 &v, float &f);
+	friend zVEC3 operator *(zVEC3 &v, float f);
 	friend float operator *(zVEC3 &a, zVEC3 &b);
 	friend zVEC3 operator ^(zVEC3 &a, zVEC3 &b);
 
@@ -219,6 +221,8 @@ public:
 	zSTRING() { XCALL(0x00402AF0); }
 	zSTRING(char *pstring) { XCALL(0x004010C0); }
 	void Clear() { XCALL(0x0059D010); }
+	int Search(int startIndex, char *substr, unsigned int num) { XCALL(0x0046C920); }
+	int Contains(char *substr) { return Search(0, substr, 1) != -1; }
 };
 
 class zCOLOR
@@ -699,7 +703,7 @@ public:
 
 	zCOLOR lightColorStat;
 	zCOLOR lightColorDyn;
-	zVEC3 lightDirectioNStat;
+	zVEC3 lightDirectionStat;
 	zSTRING *vobPresetName;
 
 	zCEventManager *eventManager;
@@ -1993,4 +1997,42 @@ class zCActiveSnd
 {
 public:
 	void AutoCalcObstruction(int immediate) { XCALL(0x004F9830); }
+};
+
+class zCRenderLight
+{
+public:
+	int lightType;
+	zVEC3 colorDiffuse;
+	zVEC3 position;
+	zVEC3 direction;
+	float range;
+
+	float rangeInv;
+	zVEC3 positionLS;
+	zVEC3 directionLS;
+	float dir_approxFalloff;
+};
+
+class zCBspSector
+{
+public:
+	zSTRING sectorName;
+	// ...
+};
+
+struct zSParticle
+{
+	zSParticle *next;
+	zVEC3 position;
+	zVEC3 positionWS;
+	zVEC3 vel;
+	float lifeSpan;
+	float alpha;
+	float alphaVel;
+	zVEC2 size;
+	zVEC2 sizeVel;
+	zVEC3 color;
+	zVEC3 colorVel;
+	zCPolyStrip *polyStrip;
 };
